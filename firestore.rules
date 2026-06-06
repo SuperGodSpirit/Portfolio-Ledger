@@ -1,0 +1,75 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ==========================================
+    // HELPER FUNCTIONS
+    // ==========================================
+    
+    // 1. Is the user authenticated?
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // 2. Fetch the user's document from the users collection
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // 3. Is the user active?
+    function isActiveUser() {
+      return isAuthenticated() && getUserData().active == true;
+    }
+
+    // 4. Is the user an owner or manager?
+    function isOwnerOrManager() {
+      let role = getUserData().role;
+      return role == 'owner' || role == 'manager';
+    }
+
+    // ==========================================
+    // USERS COLLECTION
+    // ==========================================
+    match /users/{userId} {
+      // Owner/Manager can read all user records.
+      // Viewers can only read their own user document.
+      allow read: if isActiveUser() && (isOwnerOrManager() || request.auth.uid == userId);
+      
+      // Only Owner/Manager can create, update, or delete user records.
+      allow create, update, delete: if isActiveUser() && isOwnerOrManager();
+    }
+
+    // ==========================================
+    // PORTFOLIOS COLLECTION
+    // ==========================================
+    match /portfolios/{portfolioId} {
+      // All active users can read portfolios.
+      allow read: if isActiveUser();
+      // Only Owners/Managers can write.
+      allow write: if isActiveUser() && isOwnerOrManager();
+    }
+
+    // ==========================================
+    // IPOS COLLECTION
+    // ==========================================
+    match /ipos/{ipoId} {
+      // All active users can read IPOs.
+      allow read: if isActiveUser();
+      // Only Owners/Managers can write.
+      allow write: if isActiveUser() && isOwnerOrManager();
+    }
+    
+    // ==========================================
+    // AUDIT LOGS COLLECTION
+    // ==========================================
+    match /audit_logs/{logId} {
+      // Active users can read audit logs.
+      allow read: if isActiveUser();
+      // Only Owner/Manager can create audit logs.
+      allow create: if isActiveUser() && isOwnerOrManager();
+      // No one can update or delete audit logs.
+      allow update, delete: if false; 
+    }
+  }
+}
