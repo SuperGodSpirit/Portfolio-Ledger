@@ -16,6 +16,7 @@ import PsrManagementPage from "./pages/PsrManagementPage";
 import TermsConditionsPage from "./pages/TermsConditionsPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import RoleRedirect from "./routes/RoleRedirect";
+import ReportsExportPage from "./pages/ReportsExportPage";
 
 const App = () => (
   <Routes>
@@ -34,6 +35,7 @@ const App = () => (
       <Route path="/owner/analytics" element={<AnalyticsPage basePath="/owner" />} />
       <Route path="/owner/audit" element={<AuditLogPage basePath="/owner" />} />
       <Route path="/owner/psr" element={<PsrManagementPage basePath="/owner" />} />
+      <Route path="/owner/reports" element={<ReportsExportPage basePath="/owner" />} />
     </Route>
 
     <Route element={<ProtectedRoute allowedRoles={["manager"]} />}>
@@ -46,6 +48,7 @@ const App = () => (
       <Route path="/manager/analytics" element={<AnalyticsPage basePath="/manager" />} />
       <Route path="/manager/audit" element={<AuditLogPage basePath="/manager" />} />
       <Route path="/manager/psr" element={<PsrManagementPage basePath="/manager" />} />
+      <Route path="/manager/reports" element={<ReportsExportPage basePath="/manager" />} />
     </Route>
 
     <Route element={<ProtectedRoute allowedRoles={["viewer"]} />}>

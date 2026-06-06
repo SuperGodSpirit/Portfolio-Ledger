@@ -7,12 +7,13 @@ export type AuditEventType =
   | "settlement_pending"
   | "psr_updated"
   | "user_login"
-  | "user_logout";
+  | "user_logout"
+  | "report_exported";
 
 export type AuditLog = {
   id: string;
   eventType: AuditEventType;
-  entityType: "ipo" | "settlement" | "system" | "psr";
+  entityType: "ipo" | "settlement" | "system" | "psr" | "report";
   entityId: string;
   userUid: string;
   userName: string;

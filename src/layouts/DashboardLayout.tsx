@@ -1,4 +1,4 @@
-import { LogOut, WalletCards, LayoutDashboard, BarChart3, History, ArrowRightLeft, Shield, Menu, PieChart } from "lucide-react";
+import { LogOut, WalletCards, LayoutDashboard, BarChart3, History, ArrowRightLeft, Shield, Menu, PieChart, Download } from "lucide-react";
 import { useState, useRef, useEffect, type ReactNode } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -51,6 +51,7 @@ const DashboardLayout = ({
   if (ledgerUser?.role === "owner" || ledgerUser?.role === "manager") {
     navLinks.push({ name: "Audit", to: `${basePath}/audit`, icon: Shield });
     navLinks.push({ name: "PSR Center", to: `${basePath}/psr`, icon: PieChart });
+    navLinks.push({ name: "Reports & Export", to: `${basePath}/reports`, icon: Download });
   }
 
   return (
