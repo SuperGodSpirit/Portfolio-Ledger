@@ -76,7 +76,8 @@ const IpoHistoryPage = ({ basePath }: IpoHistoryPageProps) => {
       setError(null);
 
       try {
-        setIpos(await getIpos());
+        if (!ledgerUser) return;
+        setIpos(await getIpos(ledgerUser));
       } catch {
         setError("Unable to load IPO history.");
       } finally {

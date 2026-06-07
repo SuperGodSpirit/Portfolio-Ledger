@@ -26,7 +26,8 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
     
     const fetchDashboardData = async () => {
       try {
-        const allIpos = await getIpos();
+        if (!ledgerUser) return;
+        const allIpos = await getIpos(ledgerUser);
         if (ledgerUser) {
            setIpos(filterIposForUser(allIpos, ledgerUser));
         }

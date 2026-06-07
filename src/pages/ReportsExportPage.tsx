@@ -5,7 +5,7 @@ import { getIpos, filterIposForUser } from "../services/ipoService";
 import type { IpoRecord } from "../types/ipo";
 import Spinner from "../components/ui/Spinner";
 import Button from "../components/ui/Button";
-import { Download, FileSpreadsheet, AlertCircle } from "lucide-react";
+import { Download, FileSpreadsheet, AlertCircle, Loader2 } from "lucide-react";
 import {
   reportRegistry,
   type ReportFilters,
@@ -39,7 +39,8 @@ const ReportsExportPage = ({ basePath }: ReportsExportPageProps) => {
   useEffect(() => {
     const fetchIpos = async () => {
       try {
-        const allIpos = await getIpos();
+        if (!ledgerUser) return;
+        const allIpos = await getIpos(ledgerUser);
         if (ledgerUser) {
           setIpos(filterIposForUser(allIpos, ledgerUser));
         }
@@ -296,7 +297,7 @@ const ReportsExportPage = ({ basePath }: ReportsExportPageProps) => {
             >
               {isGenerating ? (
                 <>
-                  <Spinner label="" size="sm" className="mr-2" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Generating...
                 </>
               ) : (

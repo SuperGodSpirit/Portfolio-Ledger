@@ -35,9 +35,9 @@ const SettlementCenterPage = ({ basePath }: SettlementCenterPageProps) => {
 
   useEffect(() => {
     const loadData = async () => {
-      if (!ledgerUser) return;
       try {
-        const allIpos = await getIpos();
+        if (!ledgerUser) return;
+        const allIpos = await getIpos(ledgerUser);
         const userIpos = filterIposForUser(allIpos, ledgerUser);
         setIpos(userIpos);
       } catch (err) {

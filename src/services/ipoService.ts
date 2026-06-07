@@ -8,6 +8,7 @@ import {
   query,
   serverTimestamp,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 import type { IpoFormValues, IpoRecord } from "../types/ipo";
@@ -176,8 +177,22 @@ export const getIpoById = async (ipoId: string): Promise<IpoRecord | null> => {
   return mapIpoDocument(snapshot.id, snapshot.data() as Partial<IpoRecord>);
 };
 
-export const getIpos = async (): Promise<IpoRecord[]> => {
-  const iposQuery = query(collection(db, "ipos"));
+export const getIpos = async (user: LedgerUser): Promise<IpoRecord[]> => {
+  let iposQuery;
+
+  if (user.role === "owner" || user.role === "manager") {
+    iposQuery = query(collection(db, "ipos"));
+  } else {
+    const allowedPortfolios: string[] = [];
+    if (user.portfolioAlpha) allowedPortfolios.push("portfolioAlpha");
+    if (user.portfolioBeta) allowedPortfolios.push("portfolioBeta");
+
+    if (allowedPortfolios.length === 0) {
+      return [];
+    }
+    iposQuery = query(collection(db, "ipos"), where("portfolioId", "in", allowedPortfolios));
+  }
+
   const snapshot = await getDocs(iposQuery);
 
   const records = snapshot.docs.map((ipoDoc) =>

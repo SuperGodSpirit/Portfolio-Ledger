@@ -28,15 +28,18 @@ service cloud.firestore {
       return role == 'owner' || role == 'manager';
     }
 
+    // 5. Check if user has explicit access to a specific portfolio
+    function hasPortfolioAccess(portfolioId) {
+      let user = getUserData();
+      return (portfolioId == 'portfolioAlpha' && (user.portfolioAlpha == true || user.PortfolioAlpha == true)) ||
+             (portfolioId == 'portfolioBeta' && (user.portfolioBeta == true || user.PortfolioBeta == true));
+    }
+
     // ==========================================
     // USERS COLLECTION
     // ==========================================
     match /users/{userId} {
-      // Owner/Manager can read all user records.
-      // Viewers can only read their own user document.
       allow read: if isActiveUser() && (isOwnerOrManager() || request.auth.uid == userId);
-      
-      // Only Owner/Manager can create, update, or delete user records.
       allow create, update, delete: if isActiveUser() && isOwnerOrManager();
     }
 
@@ -44,19 +47,29 @@ service cloud.firestore {
     // PORTFOLIOS COLLECTION
     // ==========================================
     match /portfolios/{portfolioId} {
-      // All active users can read portfolios.
-      allow read: if isActiveUser();
-      // Only Owners/Managers can write.
+      allow read: if isActiveUser() && (isOwnerOrManager() || hasPortfolioAccess(portfolioId));
       allow write: if isActiveUser() && isOwnerOrManager();
+    }
+
+    // ==========================================
+    // PROFIT SHARING RATIOS
+    // ==========================================
+    match /profit_sharing_ratios/{portfolioId} {
+      allow read: if isActiveUser() && (isOwnerOrManager() || hasPortfolioAccess(portfolioId));
+      allow write: if isActiveUser() && isOwnerOrManager();
+    }
+
+    match /psr_history/{historyId} {
+      allow read: if isActiveUser() && (isOwnerOrManager() || hasPortfolioAccess(resource.data.portfolioId));
+      allow create: if isActiveUser() && isOwnerOrManager();
+      allow update, delete: if false; 
     }
 
     // ==========================================
     // IPOS COLLECTION
     // ==========================================
     match /ipos/{ipoId} {
-      // All active users can read IPOs.
-      allow read: if isActiveUser();
-      // Only Owners/Managers can write.
+      allow read: if isActiveUser() && (isOwnerOrManager() || hasPortfolioAccess(resource.data.portfolioId));
       allow write: if isActiveUser() && isOwnerOrManager();
     }
     
@@ -64,11 +77,12 @@ service cloud.firestore {
     // AUDIT LOGS COLLECTION
     // ==========================================
     match /audit_logs/{logId} {
-      // Active users can read audit logs.
-      allow read: if isActiveUser();
-      // Only Owner/Manager can create audit logs.
+      allow read: if isActiveUser() && (
+        isOwnerOrManager() || 
+        hasPortfolioAccess(resource.data.portfolioId) || 
+        (resource.data.entityType == 'system' && resource.data.userUid == request.auth.uid)
+      );
       allow create: if isActiveUser() && isOwnerOrManager();
-      // No one can update or delete audit logs.
       allow update, delete: if false; 
     }
   }
