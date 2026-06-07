@@ -191,9 +191,9 @@ const PsrManagementPage = ({ basePath }: PsrManagementPageProps) => {
             </div>
 
             {portfolios.length === 0 ? (
-                <div className="rounded border border-ledger-line bg-ledger-panel p-8 text-center">
+                <div className="rounded-xl border border-white/5 bg-ledger-panel/80 p-8 text-center backdrop-blur-md">
                     <h3 className="text-lg font-semibold text-white">No Portfolios</h3>
-                    <p className="mt-2 text-sm text-[#9aa6b5]">You don't have access to manage any portfolios.</p>
+                    <p className="mt-2 text-sm text-ledger-gray">You don't have access to manage any portfolios.</p>
                 </div>
             ) : (
                 <div className="grid gap-6 lg:grid-cols-3">
@@ -217,7 +217,7 @@ const PsrManagementPage = ({ basePath }: PsrManagementPageProps) => {
                         {isLoading ? (
                             <Spinner label="Loading config..." />
                         ) : (
-                            <section className="rounded border border-ledger-line bg-ledger-panel p-5">
+                            <section className="rounded-xl border border-white/5 bg-ledger-panel/80 p-5 backdrop-blur-md shadow-xl">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-4">
                                     <h3 className="text-base font-semibold text-white">PSR Configuration</h3>
                                     <div className="flex gap-3">
@@ -249,7 +249,7 @@ const PsrManagementPage = ({ basePath }: PsrManagementPageProps) => {
                                     </div>
                                 )}
 
-                                <div className="overflow-x-auto">
+                                <div className="overflow-x-auto hide-scrollbar">
                                     <table className="w-full text-sm">
                                         <thead>
                                             <tr className="border-b border-ledger-line text-left text-xs uppercase tracking-wider text-[#8793a3]">
@@ -269,7 +269,7 @@ const PsrManagementPage = ({ basePath }: PsrManagementPageProps) => {
                                                             min="0"
                                                             max="100"
                                                             step="0.01"
-                                                            className="h-9 w-full rounded border border-ledger-line bg-[#101418] px-3 text-right text-white outline-none focus:border-ledger-green transition-colors hide-spin-button"
+                                                            className="h-9 w-full rounded border border-white/10 bg-[#101418] px-3 font-mono text-right text-white outline-none focus:border-ledger-green transition-colors hide-spin-button"
                                                             value={member.ratio.toString()}
                                                             onChange={(e) => handleRatioChange(member.uid, e.target.value)}
                                                         />
@@ -277,10 +277,10 @@ const PsrManagementPage = ({ basePath }: PsrManagementPageProps) => {
                                                 </tr>
                                             ))}
                                         </tbody>
-                                        <tfoot className="border-t-2 border-ledger-line bg-[#151a20]">
+                                        <tfoot className="border-t-2 border-white/5 bg-[#151a20]/50">
                                             <tr>
                                                 <td colSpan={2} className="py-3 px-4 font-semibold text-[#8793a3] text-right">Total Allocation</td>
-                                                <td className={`py-3 px-4 font-bold text-right ${getStatusColor()}`}>
+                                                <td className={`py-3 px-4 font-mono font-bold text-right ${getStatusColor()}`}>
                                                     {totalAllocation.toFixed(2)}%
                                                 </td>
                                             </tr>
@@ -299,7 +299,7 @@ const PsrManagementPage = ({ basePath }: PsrManagementPageProps) => {
                     </div>
 
                     <div className="space-y-6">
-                        <section className="rounded border border-ledger-line bg-ledger-panel p-5">
+                        <section className="rounded-xl border border-white/5 bg-ledger-panel/80 p-5 backdrop-blur-md shadow-xl">
                             <h3 className="text-base font-semibold text-white mb-4">Current Allocation</h3>
 
                             <div className="flex justify-center mb-6">
@@ -309,8 +309,8 @@ const PsrManagementPage = ({ basePath }: PsrManagementPageProps) => {
                                         background: donutGradient ? `conic-gradient(${donutGradient})` : "#151a20",
                                     }}
                                 >
-                                    <div className="absolute inset-2 rounded-full bg-ledger-panel flex items-center justify-center flex-col">
-                                        <span className={`text-xl font-bold ${getStatusColor()}`}>{totalAllocation.toFixed(0)}%</span>
+                                    <div className="absolute inset-2 rounded-full bg-ledger-panel flex items-center justify-center flex-col shadow-inner">
+                                        <span className={`font-mono text-xl font-bold ${getStatusColor()}`}>{totalAllocation.toFixed(0)}%</span>
                                         <span className="text-xs font-medium text-[#8793a3] uppercase">{getStatusText()}</span>
                                     </div>
                                 </div>
@@ -320,25 +320,25 @@ const PsrManagementPage = ({ basePath }: PsrManagementPageProps) => {
                                 {donutSegments.map(s => (
                                     <div key={s.uid} className="flex justify-between items-center text-sm">
                                         <div className="flex items-center gap-2">
-                                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
+                                            <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: s.color }} />
                                             <span className="text-[#c1cad6]">{s.name}</span>
                                         </div>
-                                        <span className="font-semibold text-white">{s.ratio.toFixed(2)}%</span>
+                                        <span className="font-mono font-semibold text-white">{s.ratio.toFixed(2)}%</span>
                                     </div>
                                 ))}
                             </div>
                         </section>
 
-                        <section className="rounded border border-ledger-line bg-[#101418] p-5">
+                        <section className="rounded-xl border border-white/5 bg-[#101418] p-5 shadow-inner">
                             <h3 className="text-sm font-semibold text-[#8793a3] uppercase tracking-wider mb-4">
                                 Profit Distribution Preview
                             </h3>
                             <p className="text-xs text-[#8793a3] mb-4">If Portfolio Profit = ₹100,000</p>
-                            <div className="space-y-3 border-l-2 border-ledger-line pl-4">
+                            <div className="space-y-3 border-l-2 border-white/10 pl-4">
                                 {members.map(m => (
                                     <div key={m.uid} className="flex justify-between text-sm">
                                         <span className="text-[#c1cad6]">{m.name}</span>
-                                        <span className="font-semibold text-ledger-green">
+                                        <span className="font-mono font-semibold text-ledger-green">
                                             {((100000 * m.ratio) / 100).toLocaleString("en-IN", { style: "currency", currency: "INR" })}
                                         </span>
                                     </div>

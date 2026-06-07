@@ -5,7 +5,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["Outfit", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       colors: {
         ledger: {
@@ -13,7 +14,10 @@ export default {
           panel: "#151a1f",
           line: "#2a3038",
           green: "#3fd18b",
+          red: "#ef4444",
           amber: "#f5b84b",
+          blue: "#3b82f6",
+          gray: "#8793a3",
           steel: "#dce2ea",
         },
       },

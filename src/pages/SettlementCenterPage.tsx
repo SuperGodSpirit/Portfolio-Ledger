@@ -1,4 +1,4 @@
-import { ArrowLeft, MoveRight } from "lucide-react";
+import { ArrowLeft, MoveRight, WalletCards } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Spinner from "../components/ui/Spinner";
@@ -146,16 +146,17 @@ const SettlementCenterPage = ({ basePath }: SettlementCenterPageProps) => {
 
       <div className="space-y-4">
         {settlements.length === 0 ? (
-          <div className="rounded border border-ledger-line bg-ledger-panel p-8 text-center">
+          <div className="flex flex-col items-center justify-center rounded-xl border border-white/5 bg-ledger-panel/80 p-12 backdrop-blur-md opacity-80">
+            <WalletCards className="h-12 w-12 text-ledger-gray mb-4" />
             <h3 className="text-lg font-semibold text-white">No settlements found</h3>
-            <p className="mt-2 text-sm text-[#8793a3]">
+            <p className="mt-2 text-sm text-ledger-gray">
               Try adjusting your filters or wait for new IPO allocations.
             </p>
           </div>
         ) : (
           <ul className="space-y-3">
             {settlements.map((s) => (
-              <li key={`${s.ipoId}-${s.id}`} className="flex flex-col md:flex-row md:items-center gap-4 rounded border border-ledger-line bg-ledger-panel p-4">
+              <li key={`${s.ipoId}-${s.id}`} className="flex flex-col md:flex-row md:items-center gap-4 rounded-xl border border-white/5 bg-ledger-panel/80 p-5 backdrop-blur-md transition-all hover:-translate-y-1 hover:shadow-lg">
                 <div className="flex-1">
                   <div className="mb-2 flex items-center gap-3">
                     <span className="text-xs font-semibold text-[#8793a3] uppercase tracking-wider">{s.portfolioId === "portfolioAlpha" ? "Alpha" : "Beta"}</span>
@@ -166,19 +167,19 @@ const SettlementCenterPage = ({ basePath }: SettlementCenterPageProps) => {
                   </div>
                   <div className="flex items-center gap-3 text-sm">
                     <span className="font-medium text-white min-w-16">{s.from}</span>
-                    <span className="text-[#8793a3]">pays</span>
-                    <span className="font-semibold text-ledger-green">
+                    <span className="text-ledger-gray">pays</span>
+                    <span className="font-mono font-semibold text-ledger-green">
                       {s.amount.toLocaleString("en-IN", { style: "currency", currency: "INR" })}
                     </span>
-                    <span className="text-[#8793a3]">to</span>
-                    <MoveRight className="h-4 w-4 text-[#8793a3]" />
+                    <span className="text-ledger-gray">to</span>
+                    <MoveRight className="h-4 w-4 text-ledger-gray" />
                     <span className="font-medium text-white">{s.to}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className={`text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded ${
-                    s.status === "settled" ? "bg-ledger-green/20 text-ledger-green" : "bg-orange-500/20 text-orange-400"
+                  <span className={`font-mono text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded ${
+                    s.status === "settled" ? "bg-ledger-green/20 text-ledger-green" : "bg-ledger-amber/20 text-ledger-amber"
                   }`}>
                     {s.status}
                   </span>

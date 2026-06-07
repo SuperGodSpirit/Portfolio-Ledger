@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@fontsource/outfit": "^5.2.8",
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
     "firebase": "^11.1.0",

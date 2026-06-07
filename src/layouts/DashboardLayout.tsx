@@ -56,8 +56,8 @@ const DashboardLayout = ({
 
   return (
     <main className="min-h-screen bg-ledger-ink text-ledger-steel">
-      <header className="border-b border-ledger-line bg-[#12171c]/95">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-6 px-6 py-4">
+      <header className="sticky top-0 z-40 border-b border-white/5 bg-[#12171c]/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-4 sm:gap-6 sm:px-6">
           <div className="flex items-center gap-6">
             <Link
               to={ledgerUser ? `/${ledgerUser.role}` : "/"}
@@ -102,6 +102,9 @@ const DashboardLayout = ({
                         </NavLink>
                       ))}
                     </nav>
+                    <div className="mt-4 border-t border-white/5 pt-3 text-center">
+                      <p className="text-[10px] uppercase tracking-widest text-ledger-gray">Portfolio Ledger v1.0.1</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -118,8 +121,8 @@ const DashboardLayout = ({
       </header>
 
       <div className="mx-auto flex max-w-[1400px]">
-        <div className="flex-1 p-6 md:p-8">
-          <section className="mb-8 flex flex-col justify-between gap-4 border-b border-ledger-line pb-7 md:flex-row md:items-end">
+        <div className="flex-1 p-4 sm:p-6 md:p-8">
+          <section className="mb-6 flex flex-col justify-between gap-4 border-b border-white/5 pb-6 md:mb-8 md:flex-row md:items-end">
             <div>
               <p className="mb-2 text-sm text-[#9aa6b5]">{ledgerUser?.name}</p>
               <h2 className="text-3xl font-semibold text-white">{subtitle}</h2>

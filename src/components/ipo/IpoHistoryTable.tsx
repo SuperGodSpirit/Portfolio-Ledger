@@ -1,4 +1,4 @@
-import { Edit, Archive, RotateCcw } from "lucide-react";
+import { Edit, Archive, RotateCcw, FileClock } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { IpoRecord } from "../../types/ipo";
 import Button from "../ui/Button";
@@ -42,19 +42,20 @@ const formatPL = (amount: number) => {
 const IpoHistoryTable = ({ ipos, basePath, canManage, onArchive, onRestore }: IpoHistoryTableProps) => {
   if (ipos.length === 0) {
     return (
-      <section className="rounded border border-ledger-line bg-ledger-panel p-8 text-center">
+      <section className="flex flex-col items-center justify-center rounded-xl border border-white/5 bg-ledger-panel/80 p-12 text-center backdrop-blur-md opacity-80">
+        <FileClock className="h-12 w-12 text-ledger-gray mb-4" />
         <h3 className="text-lg font-semibold text-white">No IPO records</h3>
-        <p className="mt-2 text-sm text-[#9aa6b5]">No IPOs exist in Firestore for this view.</p>
+        <p className="mt-2 text-sm text-ledger-gray">No IPOs exist in Firestore for this view.</p>
       </section>
     );
   }
 
   return (
-    <section className="overflow-hidden rounded border border-ledger-line bg-ledger-panel">
-      <div className="hidden md:block overflow-x-auto">
+    <section className="overflow-hidden rounded-xl border border-white/5 bg-ledger-panel/80 backdrop-blur-md shadow-xl">
+      <div className="hidden md:block overflow-x-auto hide-scrollbar">
         <table className="w-full min-w-[920px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-ledger-line bg-[#101418] text-left text-xs uppercase tracking-[0.16em] text-[#8793a3]">
+            <tr className="border-b border-white/5 bg-[#151a20]/80 text-left text-xs uppercase tracking-[0.16em] text-ledger-gray">
               <th className="px-5 py-4 font-semibold">IPO Name</th>
               <th className="px-5 py-4 font-semibold">Portfolio</th>
               <th className="px-5 py-4 font-semibold">Allotment Date</th>
@@ -67,32 +68,32 @@ const IpoHistoryTable = ({ ipos, basePath, canManage, onArchive, onRestore }: Ip
           </thead>
           <tbody>
             {ipos.map((ipo) => (
-              <tr key={ipo.id} className="border-b border-ledger-line last:border-0 hover:bg-[#151a20]/50 transition-colors">
-                <td className="px-5 py-4 font-semibold">
+              <tr key={ipo.id} className="border-b border-white/5 last:border-0 hover:bg-[#1a2128]/50 transition-colors">
+                <td className="px-5 py-4 font-semibold whitespace-nowrap">
                   <Link to={`${basePath}/ipos/${ipo.id}`} className="text-white hover:text-ledger-green hover:underline">
                     {ipo.ipoName}
                   </Link>
                 </td>
-                <td className="px-5 py-4 text-ledger-steel">{ipo.portfolioName}</td>
-                <td className="px-5 py-4 text-ledger-steel">{ipo.allotmentDate}</td>
-                <td className="px-5 py-4 text-right">
+                <td className="px-5 py-4 text-ledger-steel whitespace-nowrap">{ipo.portfolioName}</td>
+                <td className="px-5 py-4 font-mono text-ledger-steel whitespace-nowrap">{ipo.allotmentDate}</td>
+                <td className="px-5 py-4 text-right whitespace-nowrap">
                   {(() => {
                     const pl = ipo.calculationSnapshot?.totalProfitLoss ?? 0;
                     return (
-                      <span className={`font-semibold ${pl > 0 ? "text-ledger-green" : pl < 0 ? "text-red-400" : "text-white"}`}>
+                      <span className={`font-mono font-semibold ${pl > 0 ? "text-ledger-green" : pl < 0 ? "text-ledger-red" : "text-white"}`}>
                         {formatPL(pl)}
                       </span>
                     );
                   })()}
                 </td>
-                <td className="px-5 py-4 text-ledger-steel">{ipo.createdByName}</td>
-                <td className="px-5 py-4 text-ledger-steel">{formatTimestamp(ipo)}</td>
-                <td className="px-5 py-4">
+                <td className="px-5 py-4 text-ledger-steel whitespace-nowrap">{ipo.createdByName}</td>
+                <td className="px-5 py-4 font-mono text-ledger-steel whitespace-nowrap">{formatTimestamp(ipo)}</td>
+                <td className="px-5 py-4 whitespace-nowrap">
                   <span
-                    className={`rounded border px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${
+                    className={`rounded px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest ${
                       ipo.status === "active"
-                        ? "border-ledger-green/40 text-ledger-green"
-                        : "border-ledger-line text-[#9aa6b5]"
+                        ? "bg-ledger-blue/20 text-ledger-blue"
+                        : "bg-ledger-gray/20 text-ledger-gray"
                     }`}
                   >
                     {ipo.status === "active" ? "Active" : "Archived"}
@@ -137,41 +138,41 @@ const IpoHistoryTable = ({ ipos, basePath, canManage, onArchive, onRestore }: Ip
         </table>
       </div>
 
-      <div className="md:hidden flex flex-col">
+      <div className="md:hidden flex flex-col gap-3 p-4 bg-[#101418]">
         {ipos.map((ipo) => (
-          <div key={ipo.id} className="border-b border-ledger-line p-5 last:border-0 hover:bg-[#151a20]/50 transition-colors">
+          <div key={ipo.id} className="rounded-xl border border-white/5 bg-ledger-panel p-5 transition-colors shadow-lg">
             <div className="flex justify-between items-start mb-3">
               <div>
                 <Link to={`${basePath}/ipos/${ipo.id}`} className="block font-semibold text-white hover:text-ledger-green hover:underline text-lg mb-1">
                   {ipo.ipoName}
                 </Link>
-                <div className="text-sm text-ledger-steel">{ipo.portfolioName} &bull; {ipo.allotmentDate}</div>
+                <div className="text-sm font-mono text-ledger-steel">{ipo.portfolioName} &bull; {ipo.allotmentDate}</div>
               </div>
               <span
-                className={`rounded border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${
+                className={`rounded px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest ${
                   ipo.status === "active"
-                    ? "border-ledger-green/40 text-ledger-green"
-                    : "border-ledger-line text-[#9aa6b5]"
+                    ? "bg-ledger-blue/20 text-ledger-blue"
+                    : "bg-ledger-gray/20 text-ledger-gray"
                 }`}
               >
                 {ipo.status === "active" ? "Active" : "Archived"}
               </span>
             </div>
             
-            <div className="flex justify-between items-end mb-4">
+            <div className="flex justify-between items-end mb-4 mt-2">
               <div className="text-sm">
-                <div className="text-[#8793a3] text-xs uppercase tracking-wider mb-1">Profit/Loss</div>
+                <div className="text-ledger-gray font-mono text-[10px] uppercase tracking-widest mb-1">Profit/Loss</div>
                 {(() => {
                   const pl = ipo.calculationSnapshot?.totalProfitLoss ?? 0;
                   return (
-                    <span className={`font-semibold ${pl > 0 ? "text-ledger-green" : pl < 0 ? "text-red-400" : "text-white"}`}>
+                    <span className={`font-mono text-lg font-semibold ${pl > 0 ? "text-ledger-green" : pl < 0 ? "text-ledger-red" : "text-white"}`}>
                       {formatPL(pl)}
                     </span>
                   );
                 })()}
               </div>
-              <div className="text-right text-xs text-ledger-steel">
-                <div>By {ipo.createdByName}</div>
+              <div className="text-right text-xs text-ledger-steel font-mono">
+                <div className="mb-1">By {ipo.createdByName}</div>
                 <div>{formatTimestamp(ipo)}</div>
               </div>
             </div>

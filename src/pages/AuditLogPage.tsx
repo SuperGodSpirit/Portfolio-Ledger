@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ShieldAlert } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { getAuditLogs } from "../services/auditService";
@@ -128,17 +129,18 @@ const AuditLogPage = ({ basePath }: AuditLogPageProps) => {
         </div>
       </div>
 
-      <div className="rounded border border-ledger-line bg-ledger-panel overflow-hidden">
+      <div className="rounded-xl border border-white/5 bg-ledger-panel/80 overflow-hidden backdrop-blur-md">
         {filteredLogs.length === 0 ? (
-          <div className="p-8 text-center">
+          <div className="flex flex-col items-center justify-center p-12 opacity-80">
+            <ShieldAlert className="h-12 w-12 text-ledger-gray mb-4" />
             <h3 className="text-lg font-semibold text-white">No audit records found</h3>
-            <p className="mt-2 text-sm text-[#8793a3]">Adjust your filters to see more history.</p>
+            <p className="mt-2 text-sm text-ledger-gray">Adjust your filters to see more history.</p>
           </div>
         ) : (
           <>
             <table className="hidden md:table w-full text-sm text-left">
               <thead>
-                <tr className="border-b border-ledger-line bg-[#151a20] text-xs uppercase tracking-[0.16em] text-[#8793a3]">
+                <tr className="border-b border-white/5 bg-[#151a20]/80 text-xs uppercase tracking-[0.16em] text-ledger-gray">
                   <th className="px-4 py-3 font-semibold">Timestamp</th>
                   <th className="px-4 py-3 font-semibold">User</th>
                   <th className="px-4 py-3 font-semibold">Event Type</th>
@@ -147,11 +149,11 @@ const AuditLogPage = ({ basePath }: AuditLogPageProps) => {
               </thead>
               <tbody>
                 {filteredLogs.map(log => (
-                  <tr key={log.id} className="border-b border-ledger-line last:border-0 hover:bg-[#1a2128]/50">
-                    <td className="px-4 py-3 whitespace-nowrap text-[#9aa6b5]">{formatDate(log.timestamp)}</td>
+                  <tr key={log.id} className="border-b border-white/5 last:border-0 hover:bg-[#1a2128]/50 transition-colors">
+                    <td className="px-4 py-3 font-mono whitespace-nowrap text-ledger-gray">{formatDate(log.timestamp)}</td>
                     <td className="px-4 py-3 font-medium text-white">{log.userName}</td>
                     <td className="px-4 py-3">
-                      <span className="bg-[#101418] px-2 py-1 rounded text-xs border border-ledger-line/50 text-[#8793a3]">
+                      <span className="font-mono bg-[#101418] px-2.5 py-1 rounded text-[10px] uppercase tracking-widest border border-white/5 text-ledger-gray">
                         {formatEventName(log.eventType)}
                       </span>
                     </td>
@@ -163,17 +165,17 @@ const AuditLogPage = ({ basePath }: AuditLogPageProps) => {
 
             <div className="md:hidden flex flex-col">
               {filteredLogs.map(log => (
-                <div key={log.id} className="border-b border-ledger-line p-4 last:border-0 hover:bg-[#1a2128]/50">
+                <div key={log.id} className="border-b border-white/5 p-5 last:border-0 hover:bg-[#1a2128]/50 transition-colors">
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <span className="block font-medium text-white">{log.userName}</span>
-                      <span className="text-xs text-[#9aa6b5]">{formatDate(log.timestamp)}</span>
+                      <span className="font-mono text-xs text-ledger-gray">{formatDate(log.timestamp)}</span>
                     </div>
-                    <span className="bg-[#101418] px-2 py-1 rounded text-xs border border-ledger-line/50 text-[#8793a3]">
+                    <span className="font-mono bg-[#101418] px-2 py-1 rounded text-[10px] uppercase tracking-widest border border-white/5 text-ledger-gray">
                       {formatEventName(log.eventType)}
                     </span>
                   </div>
-                  <div className="text-sm text-[#9aa6b5] mt-2">
+                  <div className="text-sm text-ledger-steel mt-3">
                     {log.description}
                   </div>
                 </div>

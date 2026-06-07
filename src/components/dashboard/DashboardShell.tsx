@@ -191,30 +191,40 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
     return formatted;
   };
 
+  const getPLColorClass = (pl: number, applyGradient = false) => {
+    if (pl > 0) {
+      return applyGradient ? "bg-gradient-to-r from-ledger-green to-emerald-400 bg-clip-text text-transparent" : "text-ledger-green";
+    }
+    if (pl < 0) return "text-ledger-red";
+    return "text-white";
+  };
+
+  const glassPanelClass = "rounded-xl border border-white/5 bg-ledger-panel/80 p-4 sm:p-5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl";
+
   return (
     <div className="grid gap-5 lg:grid-cols-[1.4fr_0.9fr]">
       <section className="flex flex-col gap-5">
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded border border-ledger-line bg-ledger-panel p-5">
-            <h4 className="mb-4 text-sm font-medium text-[#8793a3]">Profit/Loss Overview</h4>
+          <div className={glassPanelClass}>
+            <h4 className="mb-4 text-sm font-medium text-ledger-gray">Profit/Loss Overview</h4>
             {isLoading ? (
-              <p className="text-xl font-semibold text-[#8793a3] opacity-50">...</p>
+              <p className="text-xl font-semibold text-ledger-gray opacity-50">...</p>
             ) : metrics.totalCount === 0 ? (
-              <p className="text-base font-medium text-[#9aa6b5]">No data yet</p>
+              <p className="text-base font-medium text-ledger-gray">No records found.</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {mode === "viewer" ? (
                   <>
                     <div className="flex items-end justify-between">
-                      <span className="text-sm text-[#8793a3]">Portfolio Profit/Loss</span>
-                      <span className={`text-lg font-semibold ${metrics.totalProfitLoss > 0 ? "text-ledger-green" : metrics.totalProfitLoss < 0 ? "text-red-400" : "text-white"}`}>
+                      <span className="text-sm text-ledger-gray">Portfolio P/L</span>
+                      <span className={`font-mono text-lg font-semibold ${getPLColorClass(metrics.totalProfitLoss, true)}`}>
                         {formatPL(metrics.totalProfitLoss)}
                       </span>
                     </div>
-                    <div className="h-px w-full bg-ledger-line/50" />
+                    <div className="h-px w-full bg-white/5" />
                     <div className="flex items-end justify-between">
-                      <span className="text-sm text-[#8793a3]">Your Share</span>
-                      <span className={`text-base font-medium ${metrics.userShareTotal > 0 ? "text-ledger-green" : metrics.userShareTotal < 0 ? "text-red-400" : "text-white"}`}>
+                      <span className="text-sm text-ledger-gray">Your Share</span>
+                      <span className={`font-mono text-base font-medium ${getPLColorClass(metrics.userShareTotal)}`}>
                         {formatPL(metrics.userShareTotal)}
                       </span>
                     </div>
@@ -223,51 +233,51 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
                   <>
                     {ledgerUser?.portfolioAlpha && (
                       <div className="flex items-end justify-between">
-                        <span className="text-xs text-[#8793a3]">Portfolio Alpha Profit</span>
-                        <span className={`text-sm font-medium ${metrics.portfolioAlphaProfit > 0 ? "text-ledger-green" : metrics.portfolioAlphaProfit < 0 ? "text-red-400" : "text-white"}`}>
+                        <span className="text-xs text-ledger-gray">Alpha Profit</span>
+                        <span className={`font-mono text-sm font-medium ${getPLColorClass(metrics.portfolioAlphaProfit)}`}>
                           {formatPL(metrics.portfolioAlphaProfit)}
                         </span>
                       </div>
                     )}
                     {ledgerUser?.portfolioBeta && (
                       <div className="flex items-end justify-between">
-                        <span className="text-xs text-[#8793a3]">Portfolio Beta Profit</span>
-                        <span className={`text-sm font-medium ${metrics.portfolioBetaProfit > 0 ? "text-ledger-green" : metrics.portfolioBetaProfit < 0 ? "text-red-400" : "text-white"}`}>
+                        <span className="text-xs text-ledger-gray">Beta Profit</span>
+                        <span className={`font-mono text-sm font-medium ${getPLColorClass(metrics.portfolioBetaProfit)}`}>
                           {formatPL(metrics.portfolioBetaProfit)}
                         </span>
                       </div>
                     )}
                     {(ledgerUser?.portfolioAlpha && ledgerUser?.portfolioBeta) && (
                       <div className="flex items-end justify-between pt-1">
-                        <span className="text-sm text-[#8793a3]">Portfolio Total Profit</span>
-                        <span className={`text-base font-semibold ${metrics.totalProfitLoss > 0 ? "text-ledger-green" : metrics.totalProfitLoss < 0 ? "text-red-400" : "text-white"}`}>
+                        <span className="text-sm text-ledger-gray">Total Profit</span>
+                        <span className={`font-mono text-base font-semibold ${getPLColorClass(metrics.totalProfitLoss, true)}`}>
                           {formatPL(metrics.totalProfitLoss)}
                         </span>
                       </div>
                     )}
 
-                    <div className="my-1 h-px w-full bg-ledger-line/50" />
+                    <div className="my-1 h-px w-full bg-white/5" />
 
                     {ledgerUser?.portfolioAlpha && (
                       <div className="flex items-end justify-between">
-                        <span className="text-xs text-[#8793a3]">Your Alpha Share</span>
-                        <span className={`text-sm font-medium ${metrics.userShareAlpha > 0 ? "text-ledger-green" : metrics.userShareAlpha < 0 ? "text-red-400" : "text-white"}`}>
+                        <span className="text-xs text-ledger-gray">Your Alpha Share</span>
+                        <span className={`font-mono text-sm font-medium ${getPLColorClass(metrics.userShareAlpha)}`}>
                           {formatPL(metrics.userShareAlpha)}
                         </span>
                       </div>
                     )}
                     {ledgerUser?.portfolioBeta && (
                       <div className="flex items-end justify-between">
-                        <span className="text-xs text-[#8793a3]">Your Beta Share</span>
-                        <span className={`text-sm font-medium ${metrics.userShareBeta > 0 ? "text-ledger-green" : metrics.userShareBeta < 0 ? "text-red-400" : "text-white"}`}>
+                        <span className="text-xs text-ledger-gray">Your Beta Share</span>
+                        <span className={`font-mono text-sm font-medium ${getPLColorClass(metrics.userShareBeta)}`}>
                           {formatPL(metrics.userShareBeta)}
                         </span>
                       </div>
                     )}
                     {(ledgerUser?.portfolioAlpha && ledgerUser?.portfolioBeta) && (
                       <div className="flex items-end justify-between pt-1">
-                        <span className="text-sm text-[#8793a3]">Your Total Share</span>
-                        <span className={`text-base font-semibold ${metrics.userShareTotal > 0 ? "text-ledger-green" : metrics.userShareTotal < 0 ? "text-red-400" : "text-white"}`}>
+                        <span className="text-sm text-ledger-gray">Your Total Share</span>
+                        <span className={`font-mono text-base font-semibold ${getPLColorClass(metrics.userShareTotal)}`}>
                           {formatPL(metrics.userShareTotal)}
                         </span>
                       </div>
@@ -277,33 +287,33 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
               </div>
             )}
           </div>
-          <div className="rounded border border-ledger-line bg-ledger-panel p-5">
-            <h4 className="text-sm font-medium text-[#8793a3]">Active IPOs</h4>
+          <div className={glassPanelClass}>
+            <h4 className="text-sm font-medium text-ledger-gray">Active IPOs</h4>
             {isLoading ? (
-              <p className="mt-4 text-2xl font-semibold text-[#8793a3] opacity-50">...</p>
+              <p className="mt-4 text-2xl font-semibold text-ledger-gray opacity-50">...</p>
             ) : metrics.totalCount === 0 ? (
-              <p className="mt-4 text-lg font-medium text-[#9aa6b5]">0 records</p>
+              <p className="mt-4 text-lg font-medium text-ledger-gray">0 records</p>
             ) : (
-              <p className="mt-4 text-3xl font-semibold text-white">{metrics.totalCount}</p>
+              <p className="mt-4 font-mono text-3xl font-semibold text-white">{metrics.totalCount}</p>
             )}
           </div>
-          <div className="rounded border border-ledger-line bg-ledger-panel p-5">
-            <h4 className="mb-4 text-sm font-medium text-[#8793a3]">Recent Activity</h4>
+          <div className={glassPanelClass}>
+            <h4 className="mb-4 text-sm font-medium text-ledger-gray">Recent Activity</h4>
             {isLoading ? (
-              <p className="text-xl font-semibold text-[#8793a3] opacity-50">...</p>
+              <p className="text-xl font-semibold text-ledger-gray opacity-50">...</p>
             ) : metrics.recentIposList.length === 0 ? (
-              <p className="text-base font-medium text-[#9aa6b5]">No recent activity</p>
+              <p className="text-base font-medium text-ledger-gray">No recent activity.</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {metrics.recentIposList.map((ipo) => {
                   const pl = ipo.calculationSnapshot?.totalProfitLoss ?? 0;
                   return (
-                    <div key={ipo.id} className="flex items-center justify-between border-b border-ledger-line/50 pb-2 last:border-0 last:pb-0">
+                    <div key={ipo.id} className="flex items-center justify-between border-b border-white/5 pb-2 last:border-0 last:pb-0">
                       <div>
                         <p className="text-sm font-medium text-white line-clamp-1">{ipo.ipoName}</p>
-                        <p className="text-xs text-[#8793a3]">{ipo.allotmentDate}</p>
+                        <p className="text-xs text-ledger-gray">{ipo.allotmentDate}</p>
                       </div>
-                      <span className={`text-sm font-semibold ${pl > 0 ? "text-ledger-green" : pl < 0 ? "text-red-400" : "text-white"}`}>
+                      <span className={`font-mono text-sm font-semibold ${getPLColorClass(pl)}`}>
                         {formatPL(pl)}
                       </span>
                     </div>
@@ -315,14 +325,14 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
         </div>
 
         <div className={`grid gap-4 ${readOnly ? "" : "md:grid-cols-2"}`}>
-          <div className="flex flex-col justify-between rounded border border-ledger-line bg-ledger-panel p-5">
+          <div className={`flex flex-col justify-between ${glassPanelClass} hover:translate-y-0 hover:shadow-none`}>
             <div>
-              <ShieldCheck className="mb-4 h-5 w-5 text-ledger-green" aria-hidden="true" />
+              <ShieldCheck className="mb-4 h-5 w-5 text-ledger-blue" aria-hidden="true" />
               <p className="text-sm font-semibold text-white">
                 {readOnly ? "IPO History" : "IPO Management"}
               </p>
               {!readOnly && (
-                <p className="mt-3 text-sm leading-6 text-[#9aa6b5]">
+                <p className="mt-3 text-sm leading-6 text-ledger-gray">
                   Create, edit, archive, and review IPO records securely.
                 </p>
               )}
@@ -359,27 +369,27 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
           
           {!readOnly && (
             <div className="flex flex-col gap-4">
-              <div className="rounded border border-ledger-line bg-ledger-panel p-5">
-                <h4 className="mb-4 text-sm font-medium text-[#8793a3]">Portfolio Summary</h4>
+              <div className={`${glassPanelClass} hover:translate-y-0 hover:shadow-none`}>
+                <h4 className="mb-4 text-sm font-medium text-ledger-gray">Portfolio Summary</h4>
                 <div className="flex flex-col gap-3">
                   <div className="flex items-end justify-between">
-                    <span className="text-sm text-[#8793a3]">Portfolio Alpha IPOs</span>
-                    <span className="text-base font-semibold text-white">{metrics.portfolioAlphaCount}</span>
+                    <span className="text-sm text-ledger-gray">Alpha IPOs</span>
+                    <span className="font-mono text-base font-semibold text-white">{metrics.portfolioAlphaCount}</span>
                   </div>
                   <div className="flex items-end justify-between">
-                    <span className="text-sm text-[#8793a3]">Portfolio Beta IPOs</span>
-                    <span className="text-base font-semibold text-white">{metrics.portfolioBetaCount}</span>
+                    <span className="text-sm text-ledger-gray">Beta IPOs</span>
+                    <span className="font-mono text-base font-semibold text-white">{metrics.portfolioBetaCount}</span>
                   </div>
-                  <div className="my-1 h-px w-full bg-ledger-line/50" />
+                  <div className="my-1 h-px w-full bg-white/5" />
                   <div className="flex items-end justify-between">
-                    <span className="text-sm text-[#8793a3]">Total Active IPOs</span>
-                    <span className="text-base font-semibold text-white">{metrics.totalCount}</span>
+                    <span className="text-sm text-ledger-gray">Total Active IPOs</span>
+                    <span className="font-mono text-base font-semibold text-white">{metrics.totalCount}</span>
                   </div>
                 </div>
               </div>
               
-              <Link to={`${basePath}/psr`} className="group rounded border border-ledger-line bg-ledger-panel p-5 transition-colors hover:border-ledger-green">
-                <h4 className="mb-4 text-sm font-medium text-[#8793a3] group-hover:text-white transition-colors">Profit Sharing Ratios</h4>
+              <Link to={`${basePath}/psr`} className={`group ${glassPanelClass}`}>
+                <h4 className="mb-4 text-sm font-medium text-ledger-gray group-hover:text-white transition-colors">Profit Sharing Ratios</h4>
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-white">Portfolio Alpha</span>

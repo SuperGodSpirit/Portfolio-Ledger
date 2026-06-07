@@ -128,9 +128,9 @@ const ReportsExportPage = ({ basePath }: ReportsExportPageProps) => {
         
         {/* Left Column - Form */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="rounded border border-ledger-line bg-ledger-panel p-6">
+          <div className="rounded-xl border border-white/5 bg-ledger-panel/80 p-6 backdrop-blur-md shadow-xl">
             <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5 text-ledger-green" />
+              <FileSpreadsheet className="h-5 w-5 text-ledger-blue" />
               Configure Export
             </h3>
 
@@ -149,16 +149,16 @@ const ReportsExportPage = ({ basePath }: ReportsExportPageProps) => {
                         setReportType(id as keyof typeof reportRegistry);
                         setErrorMsg(null);
                       }}
-                      className={`cursor-pointer rounded border p-4 transition ${
+                      className={`cursor-pointer rounded-xl border p-4 transition-all duration-300 ${
                         reportType === id 
-                          ? "border-ledger-green bg-ledger-green/10" 
-                          : "border-ledger-line bg-[#101418] hover:border-ledger-line/80"
+                          ? "border-ledger-green bg-ledger-green/10 shadow-[0_0_15px_rgba(63,209,139,0.15)] scale-[1.02]" 
+                          : "border-white/5 bg-[#101418] hover:border-white/20 hover:-translate-y-1"
                       }`}
                     >
                       <h4 className={`font-medium ${reportType === id ? "text-ledger-green" : "text-white"}`}>
                         {rt.name}
                       </h4>
-                      <p className="mt-1 text-xs text-[#8793a3]">{rt.desc}</p>
+                      <p className="mt-1 text-xs text-ledger-gray leading-relaxed">{rt.desc}</p>
                     </div>
                   ))}
                 </div>
@@ -274,13 +274,13 @@ const ReportsExportPage = ({ basePath }: ReportsExportPageProps) => {
 
         {/* Right Column - Actions */}
         <div className="space-y-6">
-          <div className="rounded border border-ledger-line bg-ledger-panel p-6">
+          <div className="rounded-xl border border-white/5 bg-ledger-panel/80 p-6 backdrop-blur-md shadow-xl">
             <h3 className="text-lg font-semibold text-white mb-4">Export Status</h3>
             
-            <div className="rounded bg-[#101418] border border-ledger-line/50 p-4 mb-6">
-              <p className="text-sm text-[#8793a3] mb-2">Available Records</p>
-              <p className="text-2xl font-bold text-white">{ipos.length}</p>
-              <p className="text-xs text-ledger-green mt-1">Total IPOs fetched</p>
+            <div className="rounded-xl bg-[#101418] border border-white/5 p-5 mb-6 text-center">
+              <p className="text-sm text-ledger-gray mb-2">Available Records</p>
+              <p className="font-mono text-3xl font-bold text-white">{ipos.length}</p>
+              <p className="text-xs text-ledger-blue mt-2">Total IPOs fetched</p>
             </div>
 
             {errorMsg && (
