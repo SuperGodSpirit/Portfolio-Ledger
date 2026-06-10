@@ -25,16 +25,28 @@ const SettlementPreview = ({ snapshot, onToggleSettlement }: SettlementPreviewPr
         {/* P/L Summary */}
         <div className="rounded border border-ledger-line bg-[#101418] p-4">
           <div className="text-sm font-medium text-[#c1cad6]">Total Portfolio P/L</div>
-          <div
-            className={`mt-2 text-3xl font-semibold tracking-tight ${
-              isProfit ? "text-ledger-green" : isLoss ? "text-red-500" : "text-white"
-            }`}
-          >
-            {isProfit ? "+" : ""}
-            {(snapshot.totalProfitLoss || 0).toLocaleString("en-IN", {
-              style: "currency",
-              currency: "INR",
-            })}
+          <div className="mt-2 flex items-baseline gap-3">
+            <div
+              className={`text-3xl font-semibold tracking-tight ${
+                isProfit ? "text-ledger-green" : isLoss ? "text-red-500" : "text-white"
+              }`}
+            >
+              {isProfit ? "+" : ""}
+              {(snapshot.totalProfitLoss || 0).toLocaleString("en-IN", {
+                style: "currency",
+                currency: "INR",
+              })}
+            </div>
+            {snapshot.totalInvestment ? (
+              <div
+                className={`text-lg font-medium ${
+                  isProfit ? "text-ledger-green/80" : isLoss ? "text-red-500/80" : "text-[#9aa6b5]"
+                }`}
+              >
+                {isProfit ? "+" : ""}
+                {((snapshot.totalProfitLoss / snapshot.totalInvestment) * 100).toFixed(2)}%
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -57,7 +69,12 @@ const SettlementPreview = ({ snapshot, onToggleSettlement }: SettlementPreviewPr
                     <td className="px-4 py-3 text-right text-[#9aa6b5]">
                       {entitlement.actual.toLocaleString("en-IN")}
                     </td>
-                    <td className="px-4 py-3 text-right text-[#9aa6b5]">
+                    <td
+                      className={`px-4 py-3 text-right font-medium ${
+                        entitlement.entitled > 0 ? "text-ledger-green" : entitlement.entitled < 0 ? "text-red-500" : "text-white"
+                      }`}
+                    >
+                      {entitlement.entitled > 0 ? "+" : ""}
                       {entitlement.entitled.toLocaleString("en-IN")}
                     </td>
                     <td
@@ -85,7 +102,14 @@ const SettlementPreview = ({ snapshot, onToggleSettlement }: SettlementPreviewPr
                   </div>
                   <div>
                     <div className="text-xs text-[#8793a3] uppercase tracking-wider mb-1">Entitled</div>
-                    <div className="text-sm text-[#9aa6b5]">{entitlement.entitled.toLocaleString("en-IN")}</div>
+                    <div
+                      className={`text-sm font-medium ${
+                        entitlement.entitled > 0 ? "text-ledger-green" : entitlement.entitled < 0 ? "text-red-500" : "text-white"
+                      }`}
+                    >
+                      {entitlement.entitled > 0 ? "+" : ""}
+                      {entitlement.entitled.toLocaleString("en-IN")}
+                    </div>
                   </div>
                   <div className="col-span-2 pt-2 border-t border-ledger-line/50">
                     <div className="flex justify-between items-center">

@@ -7,6 +7,7 @@ export const calculateIpoSettlement = (
   previousInstructions?: SettlementInstruction[]
 ): CalculationSnapshot => {
   let totalProfitLoss = 0;
+  let totalInvestment = 0;
   const actuals: Record<string, number> = {};
 
   // 1. Calculate Actuals and Total P/L
@@ -17,9 +18,12 @@ export const calculateIpoSettlement = (
 
   Object.values(memberEntries || {}).forEach((entry) => {
     // Only process if they actually applied/were allotted anything, though 0 is fine too.
-    const actual = (entry.finalBankCredit || 0) - (entry.allottedAmount || 0);
+    const allotted = entry.allottedAmount || 0;
+    const finalCredit = entry.finalBankCredit || 0;
+    const actual = finalCredit - allotted;
     actuals[entry.memberCode] = actual;
     totalProfitLoss += actual;
+    totalInvestment += allotted;
   });
 
   // 2. Calculate Entitlements
@@ -106,6 +110,7 @@ export const calculateIpoSettlement = (
 
   return {
     totalProfitLoss: Math.round(totalProfitLoss * 100) / 100,
+    totalInvestment: Math.round(totalInvestment * 100) / 100,
     memberEntitlements,
     settlementInstructions,
   };

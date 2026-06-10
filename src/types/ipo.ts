@@ -22,6 +22,7 @@ export type MemberEntitlement = {
 
 export type CalculationSnapshot = {
   totalProfitLoss: number;
+  totalInvestment?: number;
   memberEntitlements: MemberEntitlement[];
   settlementInstructions: SettlementInstruction[];
 };
