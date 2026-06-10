@@ -1,0 +1,29 @@
+RewriteEngine On
+
+# Force HTTPS
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+<IfModule mod_headers.c>
+
+# Never cache HTML entry files
+<FilesMatch "\.(html|htm)$">
+    Header always set Cache-Control "no-cache, no-store, must-revalidate"
+    Header always set Pragma "no-cache"
+    Header always set Expires "0"
+</FilesMatch>
+
+# Cache hashed Vite assets aggressively
+<FilesMatch "\.(js|css|woff2|woff|png|jpg|jpeg|gif|ico|svg)$">
+    Header always set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
+
+</IfModule>
+
+RewriteBase /
+
+RewriteRule ^index.html$ - [L]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.html [L]

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, LineChart, Trophy, CalendarDays, BarChart2 } from "lucide-react";
+import { ArrowLeft, LineChart, Trophy, CalendarDays, BarChart2, PieChart as PieChartIcon } from "lucide-react";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useAuth } from "../context/AuthContext";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { getIpos, filterIposForUser } from "../services/ipoService";
@@ -175,13 +176,18 @@ const AnalyticsPage = ({ basePath }: AnalyticsPageProps) => {
     return formatted;
   };
 
-  const getPLColorClass = (pl: number, applyGradient = false) => {
-    if (pl > 0) return applyGradient ? "bg-gradient-to-r from-ledger-green to-emerald-400 bg-clip-text text-transparent" : "text-ledger-green";
+  const getPLColorClass = (pl: number) => {
+    if (pl > 0) return "text-ledger-green";
     if (pl < 0) return "text-ledger-red";
     return "text-white";
   };
 
-  const glassPanelClass = "rounded-xl border border-white/5 bg-ledger-panel/80 p-5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl";
+  const solidCardClass = "rounded-xl border border-white/5 bg-[#101418] p-5 shadow-lg transition-all hover:border-white/10";
+
+  const portfolioChartData = [
+    { name: 'Alpha IPOs', value: metrics.portfolioAlphaCount, color: '#3b82f6' }, // ledger-blue
+    { name: 'Beta IPOs', value: metrics.portfolioBetaCount, color: '#8b5cf6' } // violet
+  ].filter(d => d.value > 0);
 
   if (isLoading) return <Spinner label="Loading Analytics" />;
 
@@ -195,9 +201,48 @@ const AnalyticsPage = ({ basePath }: AnalyticsPageProps) => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Performance Analytics */}
+        {/* Performance Analytics & Distribution */}
         <div className="flex flex-col gap-4">
-          <div className={glassPanelClass}>
+          
+          <div className={solidCardClass}>
+            <h4 className="mb-4 flex items-center gap-2 text-sm font-medium text-ledger-gray">
+              <PieChartIcon className="h-4 w-4" /> Portfolio Distribution
+            </h4>
+            {portfolioChartData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 opacity-60">
+                <PieChartIcon className="h-10 w-10 text-ledger-gray mb-3" />
+                <p className="text-sm font-medium text-ledger-gray">No portfolio data to display.</p>
+              </div>
+            ) : (
+              <div className="h-[250px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={portfolioChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {portfolioChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#101418', borderColor: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}
+                      itemStyle={{ color: '#fff' }}
+                    />
+                    <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+
+          <div className={solidCardClass}>
             <h4 className="mb-4 flex items-center gap-2 text-sm font-medium text-ledger-gray">
               <BarChart2 className="h-4 w-4" /> Performance Overviews
             </h4>
@@ -283,7 +328,7 @@ const AnalyticsPage = ({ basePath }: AnalyticsPageProps) => {
             )}
           </div>
 
-          <div className={glassPanelClass}>
+          <div className={solidCardClass}>
             <h4 className="mb-4 flex items-center gap-2 text-sm font-medium text-ledger-gray">
                <LineChart className="h-4 w-4" /> Settlement Insights
             </h4>
@@ -307,7 +352,7 @@ const AnalyticsPage = ({ basePath }: AnalyticsPageProps) => {
                 <div className="rounded bg-[#101418] p-4 border border-white/5">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-ledger-gray">Net Position</span>
-                    <span className={`font-mono text-base font-bold ${getPLColorClass(metrics.netSettlementPosition, true)}`}>
+                    <span className={`font-mono text-base font-bold ${getPLColorClass(metrics.netSettlementPosition)}`}>
                       {formatPL(metrics.netSettlementPosition)}
                     </span>
                   </div>
@@ -329,7 +374,7 @@ const AnalyticsPage = ({ basePath }: AnalyticsPageProps) => {
         {/* Member Leaderboards & Monthly Timeline */}
         <div className="flex flex-col gap-4">
           
-          <div className={glassPanelClass}>
+          <div className={solidCardClass}>
             <h4 className="mb-4 flex items-center gap-2 text-sm font-medium text-ledger-gray">
               <Trophy className="h-4 w-4" /> Member Rankings
             </h4>
@@ -380,7 +425,7 @@ const AnalyticsPage = ({ basePath }: AnalyticsPageProps) => {
             )}
           </div>
 
-          <div className={glassPanelClass}>
+          <div className={solidCardClass}>
             <h4 className="mb-4 flex items-center gap-2 text-sm font-medium text-ledger-gray">
               <CalendarDays className="h-4 w-4" /> Monthly Timeline
             </h4>

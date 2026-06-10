@@ -93,7 +93,7 @@ const LoginPage = () => {
       </form>
 
       <div className="mt-12 pt-6 border-t border-ledger-line text-center">
-        <p className="text-xs text-[#8793a3] font-medium tracking-wide mb-3">Version 1.0</p>
+        <p className="text-xs text-[#8793a3] font-medium tracking-wide mb-3">Version {__APP_VERSION__}</p>
         <div className="flex items-center justify-center gap-3 text-xs text-[#9aa6b5] mb-3">
           <Link to="/privacy" className="hover:text-white transition">Privacy Policy</Link>
           <span>•</span>

@@ -1,4 +1,5 @@
-import { FileClock, Plus, ShieldCheck, Users, WalletCards } from "lucide-react";
+import { FileClock, Plus, ShieldCheck, Users, WalletCards, Activity, Briefcase, TrendingUp, Trophy, ArrowRight } from "lucide-react";
+import CountUp from "react-countup";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ensureFixedPortfolios } from "../../services/portfolioService";
@@ -52,8 +53,10 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
     let userShareAlpha = 0;
     let userShareBeta = 0;
 
-    let bestIpo: { name: string; pl: number } | null = null;
+    let bestIpo: { name: string; pl: number; portfolio: string } | null = null;
     let worstIpo: { name: string; pl: number } | null = null;
+    let alphaBestIpo: { name: string; pl: number } | null = null;
+    let betaBestIpo: { name: string; pl: number } | null = null;
 
     let alphaProfitableCount = 0;
     let alphaAllottedCount = 0;
@@ -61,20 +64,76 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
     let betaProfitableCount = 0;
     let betaAllottedCount = 0;
 
+    let totalSettledCount = 0;
+    let totalArchivedCount = ipos.filter(i => i.status === 'archived').length;
+    let totalPendingCount = 0;
+
     let pendingReceivable = 0;
     let pendingPayable = 0;
     
     const memberPerformance: Record<string, { alpha: number; beta: number; total: number }> = {};
     const monthlyPerformance: Record<string, { month: string; alpha: number; beta: number; userShare: number; timestamp: number }> = {};
+    
+    // For synthesized activity feed
+    const allEvents: { id: string, type: 'created' | 'settled' | 'pending' | 'archived', title: string, dateStr: string, timestamp: number, value?: number }[] = [];
 
-    activeIpos.forEach((ipo) => {
+    ipos.forEach((ipo) => {
+      // Build activity feed
+      const createdAt = ipo.createdAt?.toDate().getTime() || 0;
+      if (createdAt > 0) {
+        allEvents.push({
+          id: `${ipo.id}-created`,
+          type: 'created',
+          title: `Created: ${ipo.ipoName}`,
+          dateStr: ipo.createdAt?.toDate().toLocaleDateString() || '',
+          timestamp: createdAt,
+        });
+      }
+      
+      if (ipo.status === 'archived') {
+        const updatedAt = ipo.updatedAt?.toDate().getTime() || createdAt;
+        allEvents.push({
+          id: `${ipo.id}-archived`,
+          type: 'archived',
+          title: `Archived: ${ipo.ipoName}`,
+          dateStr: ipo.updatedAt?.toDate().toLocaleDateString() || '',
+          timestamp: updatedAt,
+        });
+      }
+
       const snap = ipo.calculationSnapshot;
       if (!snap) return;
+
+      // Add settlement events
+      (snap.settlementInstructions || []).forEach(inst => {
+        if (inst.status === 'settled' && inst.settledAt) {
+          allEvents.push({
+            id: inst.id || `${ipo.id}-settled-${inst.from}-${inst.to}`,
+            type: 'settled',
+            title: `Settled: ${inst.from} → ${inst.to}`,
+            dateStr: new Date(inst.settledAt).toLocaleDateString(),
+            timestamp: new Date(inst.settledAt).getTime(),
+            value: inst.amount
+          });
+        } else if (inst.status === 'pending' || !inst.status) {
+           totalPendingCount++;
+           allEvents.push({
+            id: inst.id || `${ipo.id}-pending-${inst.from}-${inst.to}`,
+            type: 'pending',
+            title: `Pending: ${inst.from} → ${inst.to}`,
+            dateStr: ipo.allotmentDate || 'Recent',
+            timestamp: createdAt + 1, // rough approximation for pending sorting
+            value: inst.amount
+          });
+        }
+      });
+
+      if (ipo.status !== 'active') return;
 
       const pl = snap.totalProfitLoss;
       totalProfitLoss += pl;
 
-      if (bestIpo === null || pl > bestIpo.pl) bestIpo = { name: ipo.ipoName, pl };
+      if (bestIpo === null || pl > bestIpo.pl) bestIpo = { name: ipo.ipoName, pl, portfolio: ipo.portfolioName };
       if (worstIpo === null || pl < worstIpo.pl) worstIpo = { name: ipo.ipoName, pl };
 
       const isAllotted = Object.values(ipo.memberEntries).some(
@@ -84,11 +143,13 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
       if (ipo.portfolioId === "portfolioAlpha") {
         portfolioAlphaProfit += pl;
         portfolioAlphaCount += 1;
+        if (alphaBestIpo === null || pl > alphaBestIpo.pl) alphaBestIpo = { name: ipo.ipoName, pl };
         if (pl > 0) alphaProfitableCount++;
         if (isAllotted) alphaAllottedCount++;
       } else if (ipo.portfolioId === "portfolioBeta") {
         portfolioBetaProfit += pl;
         portfolioBetaCount += 1;
+        if (betaBestIpo === null || pl > betaBestIpo.pl) betaBestIpo = { name: ipo.ipoName, pl };
         if (pl > 0) betaProfitableCount++;
         if (isAllotted) betaAllottedCount++;
       }
@@ -105,12 +166,15 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
       }
 
       // Settlement
+      let hasSettled = false;
       (snap.settlementInstructions || []).forEach((inst) => {
+        if (inst.status === 'settled') hasSettled = true;
         if (inst.status === "pending" || !inst.status) { // Default legacy to pending
           if (inst.from === ledgerUser?.name) pendingPayable += inst.amount;
           if (inst.to === ledgerUser?.name) pendingReceivable += inst.amount;
         }
       });
+      if (hasSettled) totalSettledCount++;
 
       // Member Performance
       (snap.memberEntitlements || []).forEach(e => {
@@ -143,7 +207,6 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
     });
 
     const userShareTotal = userShareAlpha + userShareBeta;
-    const recentIposList = activeIpos.slice(0, 5);
     
     const monthlyTimeline = Object.values(monthlyPerformance).sort((a, b) => b.timestamp - a.timestamp);
     const memberLeaderboard = Object.entries(memberPerformance).map(([name, stats]) => ({ name, ...stats })).sort((a, b) => b.total - a.total);
@@ -158,9 +221,10 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
       userShareAlpha,
       userShareBeta,
       userShareTotal,
-      recentIposList,
-      bestIpo,
-      worstIpo,
+      bestIpo: bestIpo as { name: string; pl: number; portfolio: string } | null,
+      worstIpo: worstIpo as { name: string; pl: number } | null,
+      alphaBestIpo: alphaBestIpo as { name: string; pl: number } | null,
+      betaBestIpo: betaBestIpo as { name: string; pl: number } | null,
       alphaProfitableCount,
       alphaAllottedCount,
       betaProfitableCount,
@@ -170,6 +234,9 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
       pendingReceivable,
       pendingPayable,
       netSettlementPosition: pendingReceivable - pendingPayable,
+      totalSettledCount,
+      totalArchivedCount,
+      totalPendingCount,
       monthlyTimeline,
       memberLeaderboard,
     };
@@ -191,227 +258,287 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
     return formatted;
   };
 
-  const getPLColorClass = (pl: number, applyGradient = false) => {
-    if (pl > 0) {
-      return applyGradient ? "bg-gradient-to-r from-ledger-green to-emerald-400 bg-clip-text text-transparent" : "text-ledger-green";
-    }
+  const getPLColorClass = (pl: number) => {
+    if (pl > 0) return "text-ledger-green";
     if (pl < 0) return "text-ledger-red";
     return "text-white";
   };
 
-  const glassPanelClass = "rounded-xl border border-white/5 bg-ledger-panel/80 p-4 sm:p-5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl";
+  const solidCardClass = "rounded-xl border border-white/5 bg-[#151c28] p-5 shadow-lg transition-all hover:border-white/10";
+  const primaryCardClass = "rounded-2xl border border-white/10 bg-[#111827] p-6 sm:p-8 shadow-2xl relative overflow-hidden";
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1.4fr_0.9fr]">
-      <section className="flex flex-col gap-5">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className={glassPanelClass}>
-            <h4 className="mb-4 text-sm font-medium text-ledger-gray">Profit/Loss Overview</h4>
-            {isLoading ? (
-              <p className="text-xl font-semibold text-ledger-gray opacity-50">...</p>
-            ) : metrics.totalCount === 0 ? (
-              <p className="text-base font-medium text-ledger-gray">No records found.</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {mode === "viewer" ? (
-                  <>
-                    <div className="flex items-end justify-between">
-                      <span className="text-sm text-ledger-gray">Portfolio P/L</span>
-                      <span className={`font-mono text-lg font-semibold ${getPLColorClass(metrics.totalProfitLoss, true)}`}>
-                        {formatPL(metrics.totalProfitLoss)}
-                      </span>
-                    </div>
-                    <div className="h-px w-full bg-white/5" />
-                    <div className="flex items-end justify-between">
-                      <span className="text-sm text-ledger-gray">Your Share</span>
-                      <span className={`font-mono text-base font-medium ${getPLColorClass(metrics.userShareTotal)}`}>
-                        {formatPL(metrics.userShareTotal)}
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {ledgerUser?.portfolioAlpha && (
-                      <div className="flex items-end justify-between">
-                        <span className="text-xs text-ledger-gray">Alpha Profit</span>
-                        <span className={`font-mono text-sm font-medium ${getPLColorClass(metrics.portfolioAlphaProfit)}`}>
-                          {formatPL(metrics.portfolioAlphaProfit)}
-                        </span>
-                      </div>
-                    )}
-                    {ledgerUser?.portfolioBeta && (
-                      <div className="flex items-end justify-between">
-                        <span className="text-xs text-ledger-gray">Beta Profit</span>
-                        <span className={`font-mono text-sm font-medium ${getPLColorClass(metrics.portfolioBetaProfit)}`}>
-                          {formatPL(metrics.portfolioBetaProfit)}
-                        </span>
-                      </div>
-                    )}
-                    {(ledgerUser?.portfolioAlpha && ledgerUser?.portfolioBeta) && (
-                      <div className="flex items-end justify-between pt-1">
-                        <span className="text-sm text-ledger-gray">Total Profit</span>
-                        <span className={`font-mono text-base font-semibold ${getPLColorClass(metrics.totalProfitLoss, true)}`}>
-                          {formatPL(metrics.totalProfitLoss)}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="my-1 h-px w-full bg-white/5" />
-
-                    {ledgerUser?.portfolioAlpha && (
-                      <div className="flex items-end justify-between">
-                        <span className="text-xs text-ledger-gray">Your Alpha Share</span>
-                        <span className={`font-mono text-sm font-medium ${getPLColorClass(metrics.userShareAlpha)}`}>
-                          {formatPL(metrics.userShareAlpha)}
-                        </span>
-                      </div>
-                    )}
-                    {ledgerUser?.portfolioBeta && (
-                      <div className="flex items-end justify-between">
-                        <span className="text-xs text-ledger-gray">Your Beta Share</span>
-                        <span className={`font-mono text-sm font-medium ${getPLColorClass(metrics.userShareBeta)}`}>
-                          {formatPL(metrics.userShareBeta)}
-                        </span>
-                      </div>
-                    )}
-                    {(ledgerUser?.portfolioAlpha && ledgerUser?.portfolioBeta) && (
-                      <div className="flex items-end justify-between pt-1">
-                        <span className="text-sm text-ledger-gray">Your Total Share</span>
-                        <span className={`font-mono text-base font-semibold ${getPLColorClass(metrics.userShareTotal)}`}>
-                          {formatPL(metrics.userShareTotal)}
-                        </span>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-          <div className={glassPanelClass}>
-            <h4 className="text-sm font-medium text-ledger-gray">Active IPOs</h4>
-            {isLoading ? (
-              <p className="mt-4 text-2xl font-semibold text-ledger-gray opacity-50">...</p>
-            ) : metrics.totalCount === 0 ? (
-              <p className="mt-4 text-lg font-medium text-ledger-gray">0 records</p>
-            ) : (
-              <p className="mt-4 font-mono text-3xl font-semibold text-white">{metrics.totalCount}</p>
-            )}
-          </div>
-          <div className={glassPanelClass}>
-            <h4 className="mb-4 text-sm font-medium text-ledger-gray">Recent Activity</h4>
-            {isLoading ? (
-              <p className="text-xl font-semibold text-ledger-gray opacity-50">...</p>
-            ) : metrics.recentIposList.length === 0 ? (
-              <p className="text-base font-medium text-ledger-gray">No recent activity.</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {metrics.recentIposList.map((ipo) => {
-                  const pl = ipo.calculationSnapshot?.totalProfitLoss ?? 0;
-                  return (
-                    <div key={ipo.id} className="flex items-center justify-between border-b border-white/5 pb-2 last:border-0 last:pb-0">
-                      <div>
-                        <p className="text-sm font-medium text-white line-clamp-1">{ipo.ipoName}</p>
-                        <p className="text-xs text-ledger-gray">{ipo.allotmentDate}</p>
-                      </div>
-                      <span className={`font-mono text-sm font-semibold ${getPLColorClass(pl)}`}>
-                        {formatPL(pl)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className={`grid gap-4 ${readOnly ? "" : "md:grid-cols-2"}`}>
-          <div className={`flex flex-col justify-between ${glassPanelClass} hover:translate-y-0 hover:shadow-none`}>
-            <div>
-              <ShieldCheck className="mb-4 h-5 w-5 text-ledger-blue" aria-hidden="true" />
-              <p className="text-sm font-semibold text-white">
-                {readOnly ? "IPO History" : "IPO Management"}
-              </p>
-              {!readOnly && (
-                <p className="mt-3 text-sm leading-6 text-ledger-gray">
-                  Create, edit, archive, and review IPO records securely.
-                </p>
-              )}
-            </div>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link to={`${basePath}/ipos`}>
-                <Button type="button" variant="secondary">
-                  <FileClock className="h-4 w-4" aria-hidden="true" />
-                  History
-                </Button>
-              </Link>
-              <Link to={`${basePath}/settlements`}>
-                <Button type="button" variant="secondary">
-                  <WalletCards className="h-4 w-4" aria-hidden="true" />
-                  Settlements
-                </Button>
-              </Link>
-              {!readOnly ? (
-                <Link to={`${basePath}/ipos/add`}>
-                  <Button type="button">
-                    <Plus className="h-4 w-4" aria-hidden="true" />
-                    Add IPO
-                  </Button>
-                </Link>
-              ) : null}
-              <Link to={`${basePath}/analytics`}>
-                <Button type="button" variant="secondary">
-                  <FileClock className="h-4 w-4" aria-hidden="true" />
-                  Analytics
-                </Button>
-              </Link>
-            </div>
-          </div>
+    <div className="flex flex-col gap-6 lg:flex-row">
+      <section className="flex flex-1 flex-col gap-6">
+        
+        {/* COMMAND CENTER HERO */}
+        <div className={primaryCardClass}>
           
-          {!readOnly && (
-            <div className="flex flex-col gap-4">
-              <div className={`${glassPanelClass} hover:translate-y-0 hover:shadow-none`}>
-                <h4 className="mb-4 text-sm font-medium text-ledger-gray">Portfolio Summary</h4>
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-end justify-between">
-                    <span className="text-sm text-ledger-gray">Alpha IPOs</span>
-                    <span className="font-mono text-base font-semibold text-white">{metrics.portfolioAlphaCount}</span>
+          {isLoading ? (
+            <div className="animate-pulse flex flex-col gap-4">
+              <div className="h-12 w-48 rounded bg-white/5"></div>
+              <div className="h-8 w-32 rounded bg-white/5"></div>
+            </div>
+          ) : (
+            <div className="flex flex-col lg:flex-row justify-between gap-8 relative z-10">
+              
+              {/* Left Side: Massive Profit */}
+              <div className="flex flex-col gap-6">
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold uppercase tracking-widest text-ledger-gray">Financial Overview</h4>
+                  <div className="flex flex-col">
+                    <span className="mb-1 text-sm text-[#9aa6b5]">Total Portfolio Profit</span>
+                    <span className={`font-mono text-5xl sm:text-6xl font-bold tracking-tight ${getPLColorClass(metrics.totalProfitLoss)}`}>
+                      {metrics.totalProfitLoss === 0 ? "₹0" : (
+                        <CountUp
+                          start={0}
+                          end={metrics.totalProfitLoss}
+                          duration={0.7}
+                          formattingFn={(val) => formatPL(val)}
+                        />
+                      )}
+                    </span>
                   </div>
-                  <div className="flex items-end justify-between">
-                    <span className="text-sm text-ledger-gray">Beta IPOs</span>
-                    <span className="font-mono text-base font-semibold text-white">{metrics.portfolioBetaCount}</span>
+                </div>
+                
+                <div className="flex flex-col">
+                  <span className="mb-1 text-sm text-[#9aa6b5]">Your Total Share</span>
+                  <span className={`font-mono text-3xl sm:text-4xl font-semibold tracking-tight ${getPLColorClass(metrics.userShareTotal)}`}>
+                    {metrics.userShareTotal === 0 ? "₹0" : (
+                      <CountUp
+                        start={0}
+                        end={metrics.userShareTotal}
+                        duration={0.7}
+                        formattingFn={(val) => formatPL(val)}
+                      />
+                    )}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Right Side: Dense Metrics */}
+              <div className="flex flex-col gap-4 lg:min-w-[280px]">
+                <div className="rounded-xl border border-white/5 bg-black/20 p-4">
+                  <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
+                    <span className="text-sm text-ledger-gray">Active IPOs</span>
+                    <span className="font-mono font-medium text-white">{metrics.totalCount}</span>
                   </div>
-                  <div className="my-1 h-px w-full bg-white/5" />
-                  <div className="flex items-end justify-between">
-                    <span className="text-sm text-ledger-gray">Total Active IPOs</span>
-                    <span className="font-mono text-base font-semibold text-white">{metrics.totalCount}</span>
+                  <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
+                    <span className="text-sm text-ledger-gray">Settled IPOs</span>
+                    <span className="font-mono font-medium text-white">{metrics.totalSettledCount}</span>
+                  </div>
+                  <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
+                    <span className="text-sm text-ledger-gray">Top IPO Profit</span>
+                    <span className={`font-mono font-medium ${getPLColorClass(metrics.bestIpo?.pl || 0)}`}>
+                      {metrics.bestIpo ? formatPL(metrics.bestIpo.pl) : "₹0"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-ledger-gray">Top Earner</span>
+                    <span className="text-sm font-medium text-white">
+                      {metrics.memberLeaderboard[0]?.name || "-"}
+                    </span>
                   </div>
                 </div>
               </div>
               
-              <Link to={`${basePath}/psr`} className={`group ${glassPanelClass}`}>
-                <h4 className="mb-4 text-sm font-medium text-ledger-gray group-hover:text-white transition-colors">Profit Sharing Ratios</h4>
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-white">Portfolio Alpha</span>
-                    <span className="text-xs font-semibold text-ledger-green flex items-center gap-1">
-                      ✓ Balanced
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-white">Portfolio Beta</span>
-                    <span className="text-xs font-semibold text-ledger-green flex items-center gap-1">
-                      ✓ Balanced
-                    </span>
-                  </div>
-                </div>
-              </Link>
             </div>
           )}
         </div>
 
+        {/* TOP IPO & PORTFOLIO SUMMARIES */}
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+          
+          {/* Top Performing IPO */}
+          <div className={`${solidCardClass} flex flex-col justify-between`}>
+            <div>
+              <h4 className="mb-4 text-xs font-semibold uppercase tracking-widest text-ledger-gray flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-ledger-blue" />
+                Top Performing IPO
+              </h4>
+              {isLoading ? (
+                <p className="text-xl font-semibold text-ledger-gray opacity-50">...</p>
+              ) : metrics.bestIpo ? (
+                <div className="flex flex-col gap-1">
+                  <span className="text-lg font-semibold text-white">{metrics.bestIpo.name}</span>
+                  <span className="text-sm text-ledger-gray">{metrics.bestIpo.portfolio}</span>
+                </div>
+              ) : (
+                <p className="text-sm font-medium text-ledger-gray">No active IPOs</p>
+              )}
+            </div>
+            {metrics.bestIpo && (
+              <div className="mt-6 border-t border-white/5 pt-4">
+                <span className={`font-mono text-2xl font-bold ${getPLColorClass(metrics.bestIpo.pl)}`}>
+                  {formatPL(metrics.bestIpo.pl)}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Portfolio Alpha Summary */}
+          {ledgerUser?.portfolioAlpha && (
+            <div className={`${solidCardClass} flex flex-col justify-between`}>
+              <div>
+                <h4 className="mb-4 text-xs font-semibold uppercase tracking-widest text-ledger-gray flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-[#3b82f6]" />
+                  Portfolio Alpha
+                </h4>
+                {isLoading ? (
+                  <p className="text-xl font-semibold text-ledger-gray opacity-50">...</p>
+                ) : (
+                  <div className="flex flex-col">
+                    <span className={`font-mono text-3xl font-bold tracking-tight ${getPLColorClass(metrics.portfolioAlphaProfit)}`}>
+                      {formatPL(metrics.portfolioAlphaProfit)}
+                    </span>
+                    <div className="mt-4 flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-ledger-gray">Total IPOs</span>
+                        <span className="font-mono text-sm text-white">{metrics.portfolioAlphaCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-ledger-gray">Best IPO</span>
+                        <span className="text-sm font-medium text-white truncate max-w-[120px] text-right">
+                          {metrics.alphaBestIpo?.name || '-'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-ledger-gray">Best Profit</span>
+                        <span className={`font-mono text-sm font-medium ${getPLColorClass(metrics.alphaBestIpo?.pl || 0)}`}>
+                          {metrics.alphaBestIpo ? formatPL(metrics.alphaBestIpo.pl) : '-'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Portfolio Beta Summary */}
+          {ledgerUser?.portfolioBeta && (
+            <div className={`${solidCardClass} flex flex-col justify-between`}>
+              <div>
+                <h4 className="mb-4 text-xs font-semibold uppercase tracking-widest text-ledger-gray flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-ledger-gray" />
+                  Portfolio Beta
+                </h4>
+                {isLoading ? (
+                  <p className="text-xl font-semibold text-ledger-gray opacity-50">...</p>
+                ) : (
+                  <div className="flex flex-col">
+                    <span className={`font-mono text-3xl font-bold tracking-tight ${getPLColorClass(metrics.portfolioBetaProfit)}`}>
+                      {formatPL(metrics.portfolioBetaProfit)}
+                    </span>
+                    <div className="mt-4 flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-ledger-gray">Total IPOs</span>
+                        <span className="font-mono text-sm text-white">{metrics.portfolioBetaCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-ledger-gray">Best IPO</span>
+                        <span className="text-sm font-medium text-white truncate max-w-[120px] text-right">
+                          {metrics.betaBestIpo?.name || '-'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-ledger-gray">Best Profit</span>
+                        <span className={`font-mono text-sm font-medium ${getPLColorClass(metrics.betaBestIpo?.pl || 0)}`}>
+                          {metrics.betaBestIpo ? formatPL(metrics.betaBestIpo.pl) : '-'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* MEMBER EARNINGS LEADERBOARD */}
+        <div className={solidCardClass}>
+          <h4 className="mb-6 text-xs font-semibold uppercase tracking-widest text-ledger-gray flex items-center gap-2">
+            <Users className="h-4 w-4 text-ledger-blue" />
+            Member Earnings Leaderboard
+          </h4>
+          {isLoading ? (
+            <div className="animate-pulse flex flex-col gap-3">
+              <div className="h-8 w-full bg-white/5 rounded"></div>
+              <div className="h-8 w-full bg-white/5 rounded"></div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {metrics.memberLeaderboard.length === 0 ? (
+                <p className="text-sm font-medium text-ledger-gray">No earnings data available.</p>
+              ) : (
+                metrics.memberLeaderboard.map((member, idx) => {
+                  const isTop = idx === 0;
+                  return (
+                    <div key={member.name} className={`flex items-center justify-between pb-3 ${idx !== metrics.memberLeaderboard.length - 1 ? 'border-b border-white/5' : ''}`}>
+                      <div className="flex items-center gap-4">
+                        <div className={`flex items-center justify-center h-6 w-6 rounded-full font-mono text-xs font-bold ${isTop ? 'bg-ledger-blue/20 text-ledger-blue' : 'bg-white/5 text-ledger-gray'}`}>
+                          {idx + 1}
+                        </div>
+                        <span className={`font-medium ${isTop ? 'text-white' : 'text-ledger-gray'}`}>{member.name}</span>
+                      </div>
+                      <span className={`font-mono font-semibold text-lg tracking-tight ${getPLColorClass(member.total)}`}>
+                        {formatPL(member.total)}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* QUICK ACTIONS */}
+        <div className="flex flex-wrap items-center gap-3 mt-2">
+          {!readOnly && (
+            <Link to={`${basePath}/ipos/add`}>
+              <Button type="button" className="bg-ledger-blue text-white hover:bg-ledger-blue/90 border-transparent shadow-sm">
+                <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+                Add IPO
+              </Button>
+            </Link>
+          )}
+          <Link to={`${basePath}/settlements`}>
+            <Button type="button" variant="secondary" className="!text-white hover:!bg-white/10 !border-white/10">
+              <WalletCards className="h-4 w-4 mr-2" aria-hidden="true" />
+              Settlement Center
+            </Button>
+          </Link>
+          <Link to={`${basePath}/ipos`}>
+            <Button type="button" variant="secondary" className="!text-white hover:!bg-white/10 !border-white/10">
+              <FileClock className="h-4 w-4 mr-2" aria-hidden="true" />
+              IPO History
+            </Button>
+          </Link>
+          {!readOnly && (
+            <Link to={`${basePath}/psr`}>
+              <Button type="button" variant="secondary" className="!text-white hover:!bg-white/10 !border-white/10">
+                <Users className="h-4 w-4 mr-2" aria-hidden="true" />
+                Configure PSR
+              </Button>
+            </Link>
+          )}
+          <Link to={`${basePath}/analytics`}>
+            <Button type="button" variant="secondary" className="!text-white hover:!bg-white/10 !border-white/10">
+              <Activity className="h-4 w-4 mr-2" aria-hidden="true" />
+              Analytics
+            </Button>
+          </Link>
+        </div>
+
       </section>
 
-      <PortfolioAccessPanel readOnly={readOnly} />
+      <div className="w-full lg:w-80 lg:shrink-0">
+        <PortfolioAccessPanel 
+          readOnly={readOnly} 
+          alphaProfit={metrics.portfolioAlphaProfit} 
+          betaProfit={metrics.portfolioBetaProfit} 
+        />
+      </div>
     </div>
   );
 };

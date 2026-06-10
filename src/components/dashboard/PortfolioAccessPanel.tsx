@@ -1,7 +1,45 @@
 import { useAuth } from "../../context/AuthContext";
 import { fixedPortfolios } from "../../services/portfolioService";
+import { Users } from "lucide-react";
 
-const PortfolioAccessPanel = ({ readOnly = false }: { readOnly?: boolean }) => {
+const getAvatarColor = (name: string) => {
+  const colors = [
+    "bg-blue-500/80 text-blue-100", 
+    "bg-gray-500/80 text-gray-100"
+  ];
+  const index = name.charCodeAt(0) % colors.length;
+  return colors[index];
+};
+
+const formatPL = (amount: number) => {
+  const isPositive = amount > 0;
+  const isNegative = amount < 0;
+  const formatted = Math.abs(amount).toLocaleString("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  });
+
+  if (isPositive) return `+${formatted}`;
+  if (isNegative) return `-${formatted}`;
+  return formatted;
+};
+
+const getPLColorClass = (pl: number) => {
+  if (pl > 0) return "text-ledger-green";
+  if (pl < 0) return "text-ledger-red";
+  return "text-white";
+};
+
+const PortfolioAccessPanel = ({ 
+  readOnly = false,
+  alphaProfit = 0,
+  betaProfit = 0
+}: { 
+  readOnly?: boolean,
+  alphaProfit?: number,
+  betaProfit?: number 
+}) => {
   const { ledgerUser } = useAuth();
   
   const canManage = ledgerUser?.role === "owner" || ledgerUser?.role === "manager";
@@ -19,27 +57,49 @@ const PortfolioAccessPanel = ({ readOnly = false }: { readOnly?: boolean }) => {
     <section className="flex flex-col gap-5">
       {visiblePortfolios.map((portfolio) => {
         const totalRatio = portfolio.members.reduce((sum, m) => sum + m.ratio, 0);
+        const profit = portfolio.id === 'portfolioAlpha' ? alphaProfit : betaProfit;
         
         return (
-          <div key={portfolio.id} className="rounded-xl border border-white/5 bg-ledger-panel/80 p-4 sm:p-5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-            <div className="mb-5 flex flex-col gap-1">
-              <h3 className="text-base font-semibold text-white">{portfolio.name}</h3>
+          <div key={portfolio.id} className="rounded-lg border border-white/5 bg-[#111827] p-3 sm:p-4 shadow-sm transition-all hover:border-white/10">
+            <div className="mb-5 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                  {portfolio.name}
+                </h3>
+                <div className="flex items-center gap-1.5 text-[10px] text-ledger-gray bg-[#151c28] px-1.5 py-0.5 rounded border border-white/5">
+                  <Users className="h-2.5 w-2.5" />
+                  <span>{portfolio.members.length}</span>
+                </div>
+              </div>
+
+              {/* Profit Prominently Displayed */}
+              <div className="flex flex-col">
+                <span className="text-xs text-ledger-gray mb-1">Total Portfolio Profit</span>
+                <span className={`font-mono text-2xl font-bold tracking-tight ${getPLColorClass(profit)}`}>
+                  {formatPL(profit)}
+                </span>
+              </div>
             </div>
             
-            <div className="rounded border border-white/5 bg-[#101418] p-4">
-              <h4 className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#8793a3]">
-                Members & PSR
+            <div className="rounded-md border border-white/5 bg-[#151c28] p-3">
+              <h4 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-ledger-gray">
+                Allocation
               </h4>
-              <ul className="space-y-3">
+              <ul className="space-y-2">
                 {portfolio.members.map((member) => {
                   const percentage = totalRatio > 0 ? (member.ratio / totalRatio) * 100 : 0;
-                  // If it's a whole number, show without decimals, otherwise show up to 2 decimal places
                   const displayValue = percentage % 1 === 0 ? percentage.toFixed(0) : percentage.toFixed(2);
+                  const avatarTheme = getAvatarColor(member.name);
                   
                   return (
-                    <li key={member.code} className="flex items-center justify-between text-sm">
-                      <span className="text-ledger-steel">{member.name}</span>
-                      <span className="font-mono font-semibold text-white">{displayValue}%</span>
+                    <li key={member.code} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${avatarTheme}`}>
+                          {member.name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-xs font-medium text-white">{member.name}</span>
+                      </div>
+                      <span className="font-mono text-xs font-semibold text-ledger-gray">{displayValue}%</span>
                     </li>
                   );
                 })}
