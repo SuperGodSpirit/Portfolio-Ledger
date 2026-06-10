@@ -1,4 +1,4 @@
-import { ArrowLeft, MoveRight, WalletCards } from "lucide-react";
+import { ArrowLeft, MoveRight, WalletCards, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Spinner from "../components/ui/Spinner";
@@ -6,7 +6,8 @@ import { useAuth } from "../context/AuthContext";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { filterIposForUser, getIpos, updateSettlementStatus } from "../services/ipoService";
 import type { IpoRecord, SettlementInstruction } from "../types/ipo";
-import { fixedPortfolios } from "../services/portfolioService";
+import { getPortfolios } from "../services/portfolioService";
+import type { Portfolio } from "../types/portfolio";
 
 type SettlementCenterPageProps = {
   basePath: "/owner" | "/manager" | "/viewer";
@@ -27,9 +28,11 @@ type EnrichedSettlement = SettlementInstruction & {
 const SettlementCenterPage = ({ basePath }: SettlementCenterPageProps) => {
   const { ledgerUser } = useAuth();
   const [ipos, setIpos] = useState<IpoRecord[]>([]);
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [searchTerm, setSearchTerm] = useState("");
   const [portfolioFilter, setPortfolioFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all"); // all, pending, settled
 
@@ -37,9 +40,10 @@ const SettlementCenterPage = ({ basePath }: SettlementCenterPageProps) => {
     const loadData = async () => {
       try {
         if (!ledgerUser) return;
-        const allIpos = await getIpos(ledgerUser);
+        const [allIpos, allPortfolios] = await Promise.all([getIpos(ledgerUser), getPortfolios()]);
         const userIpos = filterIposForUser(allIpos, ledgerUser);
         setIpos(userIpos);
+        setPortfolios(allPortfolios);
       } catch (err) {
         setError("Failed to load settlements.");
       } finally {
@@ -128,7 +132,7 @@ const SettlementCenterPage = ({ basePath }: SettlementCenterPageProps) => {
           className="rounded border border-ledger-line bg-ledger-ink px-3 py-2 text-sm text-white focus:border-ledger-green focus:outline-none"
         >
           <option value="all">All Portfolios</option>
-          {Object.values(fixedPortfolios).map((p) => (
+          {portfolios.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
         </select>

@@ -1,5 +1,5 @@
 import type { Timestamp } from "firebase/firestore";
-import type { MemberCode, PortfolioId } from "./portfolio";
+import type { MemberCode, PortfolioId, PortfolioMember } from "./portfolio";
 
 export type IpoStatus = "active" | "archived";
 
@@ -42,6 +42,8 @@ export type IpoRecord = {
   ipoName: string;
   portfolioId: PortfolioId;
   portfolioName: string;
+  psrVersionId?: string; // Links to the PSR version used for calculation
+  lockedPsr?: PortfolioMember[]; // Stores the exact PSR array used during creation
   allotmentDate: string;
   lotValue?: number | null;
   memberEntries: Record<string, IpoMemberEntry>;
@@ -57,6 +59,8 @@ export type IpoFormValues = {
   ipoName: string;
   portfolioId: PortfolioId;
   portfolioName: string;
+  psrVersionId?: string;
+  lockedPsr?: PortfolioMember[];
   allotmentDate: string;
   lotValue: number | null;
   status: IpoStatus;

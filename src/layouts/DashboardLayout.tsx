@@ -11,6 +11,7 @@ type DashboardLayoutProps = {
   title: string;
   subtitle: string;
   readOnly?: boolean;
+  headerRight?: ReactNode;
   children: ReactNode;
 };
 
@@ -18,6 +19,7 @@ const DashboardLayout = ({
   title,
   subtitle,
   readOnly = false,
+  headerRight,
   children,
 }: DashboardLayoutProps) => {
   const { ledgerUser, logout } = useAuth();
@@ -50,7 +52,7 @@ const DashboardLayout = ({
 
   if (ledgerUser?.role === "owner" || ledgerUser?.role === "manager") {
     navLinks.push({ name: "Audit", to: `${basePath}/audit`, icon: Shield });
-    navLinks.push({ name: "PSR Center", to: `${basePath}/psr`, icon: PieChart });
+    navLinks.push({ name: "Admin Center", to: `${basePath}/admin`, icon: PieChart });
     navLinks.push({ name: "Reports & Export", to: `${basePath}/reports`, icon: Download });
   }
 
@@ -73,7 +75,8 @@ const DashboardLayout = ({
                 <h1 className="text-xl font-semibold text-white">{title}</h1>
               </div>
             </Link>
-
+          </div>
+          <div className="flex items-center gap-3">
             {ledgerUser && (
               <div className="relative z-50" ref={menuRef}>
                 <Button type="button" variant="secondary" onClick={() => setIsMenuOpen(!isMenuOpen)}>
@@ -82,7 +85,7 @@ const DashboardLayout = ({
                 </Button>
                 
                 {isMenuOpen && (
-                  <div className="absolute top-full left-0 mt-3 w-56 rounded border border-ledger-line bg-ledger-panel p-2 shadow-2xl">
+                  <div className="absolute top-full right-0 mt-3 w-56 rounded border border-ledger-line bg-ledger-panel p-2 shadow-2xl">
                     <nav className="space-y-1">
                       {navLinks.map((link) => (
                         <NavLink
@@ -103,15 +106,13 @@ const DashboardLayout = ({
                       ))}
                     </nav>
                     <div className="mt-4 border-t border-white/5 pt-3 text-center">
-                      <p className="text-[10px] uppercase tracking-widest text-ledger-gray">Portfolio Ledger v1.0.1</p>
+                      <p className="text-[10px] uppercase tracking-widest text-ledger-gray">Portfolio Ledger v{__APP_VERSION__}</p>
                     </div>
                   </div>
                 )}
               </div>
             )}
-          </div>
-          <div className="flex items-center gap-3">
-            {ledgerUser && !readOnly ? <RoleBadge role={ledgerUser.role} /> : null}
+            {ledgerUser && !readOnly && ledgerUser.role !== 'owner' && ledgerUser.role !== 'manager' ? <RoleBadge role={ledgerUser.role} /> : null}
             <Button type="button" variant="secondary" onClick={logout}>
               <LogOut className="h-4 w-4" aria-hidden="true" />
               <span className="hidden sm:inline">Sign out</span>
@@ -127,6 +128,11 @@ const DashboardLayout = ({
               <p className="mb-2 text-sm text-[#9aa6b5]">{ledgerUser?.name}</p>
               <h2 className="text-3xl font-semibold text-white">{subtitle}</h2>
             </div>
+            {headerRight && (
+              <div className="mt-4 md:mt-0">
+                {headerRight}
+              </div>
+            )}
           </section>
           {children}
         </div>

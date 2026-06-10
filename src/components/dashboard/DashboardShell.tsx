@@ -2,7 +2,7 @@ import { FileClock, Plus, ShieldCheck, Users, WalletCards, Activity, Briefcase, 
 import CountUp from "react-countup";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ensureFixedPortfolios } from "../../services/portfolioService";
+
 import { getIpos, filterIposForUser } from "../../services/ipoService";
 import { useAuth } from "../../context/AuthContext";
 import type { IpoRecord } from "../../types/ipo";
@@ -13,24 +13,25 @@ type DashboardShellProps = {
   mode: "owner" | "manager" | "viewer";
   basePath: "/owner" | "/manager" | "/viewer";
   readOnly?: boolean;
+  portfolioIdFilter?: string; // Optional filter to restrict data to a specific portfolio
 };
 
-const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => {
+const DashboardShell = ({ basePath, readOnly = false, portfolioIdFilter }: DashboardShellProps) => {
   const { ledgerUser } = useAuth();
   const [ipos, setIpos] = useState<IpoRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!readOnly) {
-      void ensureFixedPortfolios();
-    }
-    
     const fetchDashboardData = async () => {
       try {
         if (!ledgerUser) return;
         const allIpos = await getIpos(ledgerUser);
         if (ledgerUser) {
-           setIpos(filterIposForUser(allIpos, ledgerUser));
+           let filtered = filterIposForUser(allIpos, ledgerUser);
+           if (portfolioIdFilter && portfolioIdFilter !== "all") {
+             filtered = filtered.filter(i => i.portfolioId === portfolioIdFilter);
+           }
+           setIpos(filtered);
         }
       } catch (error) {
         console.error("Failed to fetch IPOs for dashboard", error);
@@ -40,29 +41,24 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
     };
     
     void fetchDashboardData();
-  }, [readOnly, ledgerUser]);
+  }, [readOnly, ledgerUser, portfolioIdFilter]);
 
   const metrics = useMemo(() => {
     const activeIpos = ipos.filter((ipo) => ipo.status === "active");
 
+    const portfolioProfits: Record<string, number> = {};
+    const portfolioCounts: Record<string, number> = {};
+    const portfolioBestIpo: Record<string, { name: string; pl: number }> = {};
+    const userPortfolioProfits: Record<string, number> = {};
+
     let totalProfitLoss = 0;
-    let portfolioAlphaProfit = 0;
-    let portfolioBetaProfit = 0;
-    let portfolioAlphaCount = 0;
-    let portfolioBetaCount = 0;
-    let userShareAlpha = 0;
-    let userShareBeta = 0;
+    let userShareTotal = 0;
 
     let bestIpo: { name: string; pl: number; portfolio: string } | null = null;
     let worstIpo: { name: string; pl: number } | null = null;
-    let alphaBestIpo: { name: string; pl: number } | null = null;
-    let betaBestIpo: { name: string; pl: number } | null = null;
 
-    let alphaProfitableCount = 0;
-    let alphaAllottedCount = 0;
-    
-    let betaProfitableCount = 0;
-    let betaAllottedCount = 0;
+    let totalProfitableCount = 0;
+    let totalAllottedCount = 0;
 
     let totalSettledCount = 0;
     let totalArchivedCount = ipos.filter(i => i.status === 'archived').length;
@@ -71,8 +67,8 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
     let pendingReceivable = 0;
     let pendingPayable = 0;
     
-    const memberPerformance: Record<string, { alpha: number; beta: number; total: number }> = {};
-    const monthlyPerformance: Record<string, { month: string; alpha: number; beta: number; userShare: number; timestamp: number }> = {};
+    const memberPerformance: Record<string, { [key: string]: number; total: number }> = {};
+    const monthlyPerformance: Record<string, { month: string; portfolios: Record<string, number>; userShare: number; timestamp: number }> = {};
     
     // For synthesized activity feed
     const allEvents: { id: string, type: 'created' | 'settled' | 'pending' | 'archived', title: string, dateStr: string, timestamp: number, value?: number }[] = [];
@@ -132,37 +128,30 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
 
       const pl = snap.totalProfitLoss;
       totalProfitLoss += pl;
+      portfolioProfits[ipo.portfolioId] = (portfolioProfits[ipo.portfolioId] || 0) + pl;
+      portfolioCounts[ipo.portfolioId] = (portfolioCounts[ipo.portfolioId] || 0) + 1;
 
       if (bestIpo === null || pl > bestIpo.pl) bestIpo = { name: ipo.ipoName, pl, portfolio: ipo.portfolioName };
       if (worstIpo === null || pl < worstIpo.pl) worstIpo = { name: ipo.ipoName, pl };
+
+      const currentBest = portfolioBestIpo[ipo.portfolioId];
+      if (!currentBest || pl > currentBest.pl) {
+        portfolioBestIpo[ipo.portfolioId] = { name: ipo.ipoName, pl };
+      }
 
       const isAllotted = Object.values(ipo.memberEntries).some(
         (m) => (m.allottedLots ?? 0) > 0 || m.allottedAmount > 0
       );
 
-      if (ipo.portfolioId === "portfolioAlpha") {
-        portfolioAlphaProfit += pl;
-        portfolioAlphaCount += 1;
-        if (alphaBestIpo === null || pl > alphaBestIpo.pl) alphaBestIpo = { name: ipo.ipoName, pl };
-        if (pl > 0) alphaProfitableCount++;
-        if (isAllotted) alphaAllottedCount++;
-      } else if (ipo.portfolioId === "portfolioBeta") {
-        portfolioBetaProfit += pl;
-        portfolioBetaCount += 1;
-        if (betaBestIpo === null || pl > betaBestIpo.pl) betaBestIpo = { name: ipo.ipoName, pl };
-        if (pl > 0) betaProfitableCount++;
-        if (isAllotted) betaAllottedCount++;
-      }
+      if (pl > 0) totalProfitableCount++;
+      if (isAllotted) totalAllottedCount++;
 
       const userEntitlement = (snap.memberEntitlements || []).find(
         (e) => e.memberName === ledgerUser?.name,
       );
       if (userEntitlement) {
-        if (ipo.portfolioId === "portfolioAlpha") {
-          userShareAlpha += userEntitlement.entitled;
-        } else if (ipo.portfolioId === "portfolioBeta") {
-          userShareBeta += userEntitlement.entitled;
-        }
+         userPortfolioProfits[ipo.portfolioId] = (userPortfolioProfits[ipo.portfolioId] || 0) + userEntitlement.entitled;
+         userShareTotal += userEntitlement.entitled;
       }
 
       // Settlement
@@ -179,10 +168,9 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
       // Member Performance
       (snap.memberEntitlements || []).forEach(e => {
         if (!memberPerformance[e.memberName]) {
-          memberPerformance[e.memberName] = { alpha: 0, beta: 0, total: 0 };
+          memberPerformance[e.memberName] = { total: 0 };
         }
-        if (ipo.portfolioId === "portfolioAlpha") memberPerformance[e.memberName].alpha += e.entitled;
-        if (ipo.portfolioId === "portfolioBeta") memberPerformance[e.memberName].beta += e.entitled;
+        memberPerformance[e.memberName][ipo.portfolioId] = (memberPerformance[e.memberName][ipo.portfolioId] || 0) + e.entitled;
         memberPerformance[e.memberName].total += e.entitled;
       });
 
@@ -194,10 +182,9 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
           if (!isNaN(date.getTime())) {
             const monthKey = date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
             if (!monthlyPerformance[monthKey]) {
-              monthlyPerformance[monthKey] = { month: monthKey, alpha: 0, beta: 0, userShare: 0, timestamp: date.getTime() };
+              monthlyPerformance[monthKey] = { month: monthKey, portfolios: {}, userShare: 0, timestamp: date.getTime() };
             }
-            if (ipo.portfolioId === "portfolioAlpha") monthlyPerformance[monthKey].alpha += pl;
-            if (ipo.portfolioId === "portfolioBeta") monthlyPerformance[monthKey].beta += pl;
+            monthlyPerformance[monthKey].portfolios[ipo.portfolioId] = (monthlyPerformance[monthKey].portfolios[ipo.portfolioId] || 0) + pl;
             if (userEntitlement) {
               monthlyPerformance[monthKey].userShare += userEntitlement.entitled;
             }
@@ -206,31 +193,21 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
       }
     });
 
-    const userShareTotal = userShareAlpha + userShareBeta;
-    
     const monthlyTimeline = Object.values(monthlyPerformance).sort((a, b) => b.timestamp - a.timestamp);
     const memberLeaderboard = Object.entries(memberPerformance).map(([name, stats]) => ({ name, ...stats })).sort((a, b) => b.total - a.total);
 
     return {
       totalProfitLoss,
-      portfolioAlphaProfit,
-      portfolioBetaProfit,
-      portfolioAlphaCount,
-      portfolioBetaCount,
+      portfolioProfits,
+      portfolioCounts,
+      portfolioBestIpo,
+      userPortfolioProfits,
       totalCount: activeIpos.length,
-      userShareAlpha,
-      userShareBeta,
       userShareTotal,
       bestIpo: bestIpo as { name: string; pl: number; portfolio: string } | null,
       worstIpo: worstIpo as { name: string; pl: number } | null,
-      alphaBestIpo: alphaBestIpo as { name: string; pl: number } | null,
-      betaBestIpo: betaBestIpo as { name: string; pl: number } | null,
-      alphaProfitableCount,
-      alphaAllottedCount,
-      betaProfitableCount,
-      betaAllottedCount,
-      totalProfitableCount: alphaProfitableCount + betaProfitableCount,
-      totalAllottedCount: alphaAllottedCount + betaAllottedCount,
+      totalProfitableCount,
+      totalAllottedCount,
       pendingReceivable,
       pendingPayable,
       netSettlementPosition: pendingReceivable - pendingPayable,
@@ -376,83 +353,51 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
             )}
           </div>
 
-          {/* Portfolio Alpha Summary */}
-          {ledgerUser?.portfolioAlpha && (
-            <div className={`${solidCardClass} flex flex-col justify-between`}>
-              <div>
-                <h4 className="mb-4 text-xs font-semibold uppercase tracking-widest text-ledger-gray flex items-center gap-2">
-                  <Briefcase className="h-4 w-4 text-[#3b82f6]" />
-                  Portfolio Alpha
-                </h4>
-                {isLoading ? (
-                  <p className="text-xl font-semibold text-ledger-gray opacity-50">...</p>
-                ) : (
-                  <div className="flex flex-col">
-                    <span className={`font-mono text-3xl font-bold tracking-tight ${getPLColorClass(metrics.portfolioAlphaProfit)}`}>
-                      {formatPL(metrics.portfolioAlphaProfit)}
-                    </span>
-                    <div className="mt-4 flex flex-col gap-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-ledger-gray">Total IPOs</span>
-                        <span className="font-mono text-sm text-white">{metrics.portfolioAlphaCount}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-ledger-gray">Best IPO</span>
-                        <span className="text-sm font-medium text-white truncate max-w-[120px] text-right">
-                          {metrics.alphaBestIpo?.name || '-'}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-ledger-gray">Best Profit</span>
-                        <span className={`font-mono text-sm font-medium ${getPLColorClass(metrics.alphaBestIpo?.pl || 0)}`}>
-                          {metrics.alphaBestIpo ? formatPL(metrics.alphaBestIpo.pl) : '-'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Dynamic Portfolio Summaries */}
+          {Object.keys(metrics.portfolioProfits).map(portId => {
+            const count = metrics.portfolioCounts[portId] || 0;
+            const best = metrics.portfolioBestIpo[portId];
+            const portName = ipos.find(i => i.portfolioId === portId)?.portfolioName || portId;
+            const isBeta = portId === 'portfolioBeta';
 
-          {/* Portfolio Beta Summary */}
-          {ledgerUser?.portfolioBeta && (
-            <div className={`${solidCardClass} flex flex-col justify-between`}>
-              <div>
-                <h4 className="mb-4 text-xs font-semibold uppercase tracking-widest text-ledger-gray flex items-center gap-2">
-                  <Briefcase className="h-4 w-4 text-ledger-gray" />
-                  Portfolio Beta
-                </h4>
-                {isLoading ? (
-                  <p className="text-xl font-semibold text-ledger-gray opacity-50">...</p>
-                ) : (
-                  <div className="flex flex-col">
-                    <span className={`font-mono text-3xl font-bold tracking-tight ${getPLColorClass(metrics.portfolioBetaProfit)}`}>
-                      {formatPL(metrics.portfolioBetaProfit)}
-                    </span>
-                    <div className="mt-4 flex flex-col gap-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-ledger-gray">Total IPOs</span>
-                        <span className="font-mono text-sm text-white">{metrics.portfolioBetaCount}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-ledger-gray">Best IPO</span>
-                        <span className="text-sm font-medium text-white truncate max-w-[120px] text-right">
-                          {metrics.betaBestIpo?.name || '-'}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-ledger-gray">Best Profit</span>
-                        <span className={`font-mono text-sm font-medium ${getPLColorClass(metrics.betaBestIpo?.pl || 0)}`}>
-                          {metrics.betaBestIpo ? formatPL(metrics.betaBestIpo.pl) : '-'}
-                        </span>
+            return (
+              <div key={portId} className={`${solidCardClass} flex flex-col justify-between`}>
+                <div>
+                  <h4 className="mb-4 text-xs font-semibold uppercase tracking-widest text-ledger-gray flex items-center gap-2">
+                    <Briefcase className={`h-4 w-4 ${isBeta ? 'text-ledger-gray' : 'text-[#3b82f6]'}`} />
+                    {portName}
+                  </h4>
+                  {isLoading ? (
+                    <p className="text-xl font-semibold text-ledger-gray opacity-50">...</p>
+                  ) : (
+                    <div className="flex flex-col">
+                      <span className={`font-mono text-3xl font-bold tracking-tight ${getPLColorClass(metrics.portfolioProfits[portId])}`}>
+                        {formatPL(metrics.portfolioProfits[portId])}
+                      </span>
+                      <div className="mt-4 flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-ledger-gray">Total IPOs</span>
+                          <span className="font-mono text-sm text-white">{count}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-ledger-gray">Best IPO</span>
+                          <span className="text-sm font-medium text-white truncate max-w-[120px] text-right">
+                            {best?.name || '-'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-ledger-gray">Best Profit</span>
+                          <span className={`font-mono text-sm font-medium ${getPLColorClass(best?.pl || 0)}`}>
+                            {best ? formatPL(best.pl) : '-'}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })}
         </div>
 
         {/* MEMBER EARNINGS LEADERBOARD */}
@@ -515,10 +460,10 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
             </Button>
           </Link>
           {!readOnly && (
-            <Link to={`${basePath}/psr`}>
+            <Link to={`${basePath}/admin`}>
               <Button type="button" variant="secondary" className="!text-white hover:!bg-white/10 !border-white/10">
                 <Users className="h-4 w-4 mr-2" aria-hidden="true" />
-                Configure PSR
+                Admin Center
               </Button>
             </Link>
           )}
@@ -535,8 +480,8 @@ const DashboardShell = ({ basePath, readOnly = false }: DashboardShellProps) => 
       <div className="w-full lg:w-80 lg:shrink-0">
         <PortfolioAccessPanel 
           readOnly={readOnly} 
-          alphaProfit={metrics.portfolioAlphaProfit} 
-          betaProfit={metrics.portfolioBetaProfit} 
+          portfolioProfits={metrics.portfolioProfits} 
+          userPortfolioProfits={metrics.userPortfolioProfits} 
         />
       </div>
     </div>

@@ -5,11 +5,16 @@ import { normalizeUserRole, type LedgerUser } from "../types/user";
 type UserDocumentData = {
   name?: unknown;
   role?: unknown;
+  status?: unknown;
+  portfolios?: unknown;
+  // Legacy fields
   active?: unknown;
   portfolioAlpha?: unknown;
   portfolioBeta?: unknown;
   PortfolioAlpha?: unknown;
   PortfolioBeta?: unknown;
+  createdAt?: unknown;
+  updatedAt?: unknown;
 };
 
 export const getLedgerUser = async (uid: string): Promise<LedgerUser | null> => {
@@ -21,25 +26,35 @@ export const getLedgerUser = async (uid: string): Promise<LedgerUser | null> => 
 
   const data = userSnapshot.data() as UserDocumentData;
   const role = normalizeUserRole(data.role);
-  const portfolioAlpha = data.portfolioAlpha ?? data.PortfolioAlpha;
-  const portfolioBeta = data.portfolioBeta ?? data.PortfolioBeta;
 
-  if (
-    typeof data.name !== "string" ||
-    !role ||
-    typeof data.active !== "boolean" ||
-    typeof portfolioAlpha !== "boolean" ||
-    typeof portfolioBeta !== "boolean"
-  ) {
-    throw new Error("User profile is missing required role or access fields.");
+  // Fallback logic for migration
+  const legacyActive = typeof data.active === "boolean" ? data.active : true;
+  const status = typeof data.status === "string" ? (data.status as "pending" | "active" | "deactivated") : (legacyActive ? "active" : "deactivated");
+
+  let portfolios: string[] = [];
+  if (Array.isArray(data.portfolios)) {
+    portfolios = data.portfolios as string[];
+  } else {
+    // Legacy fallback
+    if (data.portfolioAlpha === true || data.PortfolioAlpha === true) portfolios.push("portfolioAlpha");
+    if (data.portfolioBeta === true || data.PortfolioBeta === true) portfolios.push("portfolioBeta");
+  }
+
+  if (typeof data.name !== "string" || !role) {
+    throw new Error("User profile is missing required name or role fields.");
   }
 
   return {
     uid,
     name: data.name,
     role,
-    active: data.active,
-    portfolioAlpha,
-    portfolioBeta,
+    status,
+    portfolios,
+    // Keep legacy around just in case
+    active: legacyActive,
+    portfolioAlpha: portfolios.includes("portfolioAlpha"),
+    portfolioBeta: portfolios.includes("portfolioBeta"),
+    createdAt: data.createdAt as any,
+    updatedAt: data.updatedAt as any,
   };
 };

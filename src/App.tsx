@@ -12,16 +12,21 @@ import ViewerDashboard from "./pages/ViewerDashboard";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import AuditLogPage from "./pages/AuditLogPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
-import PsrManagementPage from "./pages/PsrManagementPage";
+import AdminCenter from "./pages/AdminCenter";
 import TermsConditionsPage from "./pages/TermsConditionsPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import RoleRedirect from "./routes/RoleRedirect";
 import ReportsExportPage from "./pages/ReportsExportPage";
 
+import PendingAccess from "./pages/PendingAccess";
+import DeactivatedAccess from "./pages/DeactivatedAccess";
+
 const App = () => (
   <Routes>
     <Route path="/" element={<RoleRedirect />} />
     <Route path="/login" element={<LoginPage />} />
+    <Route path="/pending" element={<PendingAccess />} />
+    <Route path="/deactivated" element={<DeactivatedAccess />} />
     <Route path="/privacy" element={<PrivacyPolicyPage />} />
     <Route path="/terms" element={<TermsConditionsPage />} />
 
@@ -34,7 +39,7 @@ const App = () => (
       <Route path="/owner/settlements" element={<SettlementCenterPage basePath="/owner" />} />
       <Route path="/owner/analytics" element={<AnalyticsPage basePath="/owner" />} />
       <Route path="/owner/audit" element={<AuditLogPage basePath="/owner" />} />
-      <Route path="/owner/psr" element={<PsrManagementPage basePath="/owner" />} />
+      <Route path="/owner/admin" element={<AdminCenter />} />
       <Route path="/owner/reports" element={<ReportsExportPage basePath="/owner" />} />
     </Route>
 
@@ -47,7 +52,7 @@ const App = () => (
       <Route path="/manager/settlements" element={<SettlementCenterPage basePath="/manager" />} />
       <Route path="/manager/analytics" element={<AnalyticsPage basePath="/manager" />} />
       <Route path="/manager/audit" element={<AuditLogPage basePath="/manager" />} />
-      <Route path="/manager/psr" element={<PsrManagementPage basePath="/manager" />} />
+      <Route path="/manager/admin" element={<AdminCenter />} />
       <Route path="/manager/reports" element={<ReportsExportPage basePath="/manager" />} />
     </Route>
 

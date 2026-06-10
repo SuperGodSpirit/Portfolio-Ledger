@@ -4,6 +4,7 @@ const labelByRole: Record<UserRole, string> = {
   owner: "Owner",
   manager: "Manager",
   viewer: "Viewer",
+  guest: "Guest",
 };
 
 const RoleBadge = ({ role }: { role: UserRole }) => (

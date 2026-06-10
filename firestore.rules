@@ -19,28 +19,36 @@ service cloud.firestore {
 
     // 3. Is the user active?
     function isActiveUser() {
-      return isAuthenticated() && getUserData().active == true;
+      let user = getUserData();
+      return isAuthenticated() && (user.get('status', '') == 'active' || user.get('active', true) == true);
     }
 
     // 4. Is the user an owner or manager?
     function isOwnerOrManager() {
-      let role = getUserData().role;
+      let role = getUserData().get('role', '');
       return role == 'owner' || role == 'manager';
     }
 
     // 5. Check if user has explicit access to a specific portfolio
     function hasPortfolioAccess(portfolioId) {
       let user = getUserData();
-      return (portfolioId == 'portfolioAlpha' && (user.portfolioAlpha == true || user.PortfolioAlpha == true)) ||
-             (portfolioId == 'portfolioBeta' && (user.portfolioBeta == true || user.PortfolioBeta == true));
+      let hasDynamicAccess = user.get('portfolios', []).hasAny([portfolioId]);
+      let hasLegacyAlpha = portfolioId == 'portfolioAlpha' && (user.get('portfolioAlpha', false) == true || user.get('PortfolioAlpha', false) == true);
+      let hasLegacyBeta = portfolioId == 'portfolioBeta' && (user.get('portfolioBeta', false) == true || user.get('PortfolioBeta', false) == true);
+      return hasDynamicAccess || hasLegacyAlpha || hasLegacyBeta;
     }
 
     // ==========================================
     // USERS COLLECTION
     // ==========================================
     match /users/{userId} {
-      allow read: if isActiveUser() && (isOwnerOrManager() || request.auth.uid == userId);
-      allow create, update, delete: if isActiveUser() && isOwnerOrManager();
+      allow read: if isAuthenticated() && (request.auth.uid == userId || (isActiveUser() && isOwnerOrManager()));
+      allow create: if isAuthenticated() 
+        && request.auth.uid == userId 
+        && request.resource.data.role == 'viewer'
+        && request.resource.data.status == 'pending'
+        && request.resource.data.portfolios.size() == 0;
+      allow update, delete: if isActiveUser() && isOwnerOrManager();
     }
 
     // ==========================================
@@ -49,6 +57,12 @@ service cloud.firestore {
     match /portfolios/{portfolioId} {
       allow read: if isActiveUser() && (isOwnerOrManager() || hasPortfolioAccess(portfolioId));
       allow write: if isActiveUser() && isOwnerOrManager();
+      
+      // PSR Versions Subcollection
+      match /psrVersions/{versionId} {
+        allow read: if isActiveUser() && (isOwnerOrManager() || hasPortfolioAccess(portfolioId));
+        allow write: if isActiveUser() && isOwnerOrManager();
+      }
     }
 
     // ==========================================
@@ -82,7 +96,10 @@ service cloud.firestore {
         hasPortfolioAccess(resource.data.portfolioId) || 
         (resource.data.entityType == 'system' && resource.data.userUid == request.auth.uid)
       );
-      allow create: if isActiveUser() && isOwnerOrManager();
+      allow create: if isActiveUser() && (
+        isOwnerOrManager() || 
+        (request.resource.data.entityType == 'system' && request.resource.data.userUid == request.auth.uid)
+      );
       allow update, delete: if false; 
     }
   }

@@ -19,11 +19,23 @@ const RoleRedirect = () => {
     return <Navigate to="/login" replace />;
   }
 
-  if (!ledgerUser || !ledgerUser.active) {
+  if (!ledgerUser) {
     return <Navigate to="/login" replace />;
   }
 
-  return <Navigate to={dashboardPathByRole[ledgerUser.role]} replace />;
+  if (ledgerUser.status === "pending" || ledgerUser.active === false || ledgerUser.status === "deactivated") {
+    if (ledgerUser.status === "pending") {
+      return <Navigate to="/pending" replace />;
+    }
+    return <Navigate to="/deactivated" replace />;
+  }
+
+  const role = ledgerUser.role;
+  if (role === "guest") {
+    return <Navigate to="/pending" replace />;
+  }
+
+  return <Navigate to={dashboardPathByRole[role]} replace />;
 };
 
 export default RoleRedirect;

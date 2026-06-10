@@ -20,7 +20,7 @@ const LoginPage = () => {
     }
   }, [error]);
 
-  if (!isLoading && firebaseUser && ledgerUser?.active) {
+  if (!isLoading && firebaseUser && ledgerUser) {
     return <Navigate to="/" replace />;
   }
 

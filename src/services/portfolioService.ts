@@ -1,3 +1,4 @@
+
 import {
     collection,
     doc,
@@ -5,121 +6,65 @@ import {
     getDocs,
     orderBy,
     query,
+    where,
     serverTimestamp,
     setDoc,
+    addDoc,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
-import type { Portfolio, PortfolioId } from "../types/portfolio";
-
-export const fixedPortfolios: Record<PortfolioId, Omit<Portfolio, "createdAt" | "updatedAt">> = {
-    portfolioAlpha: {
-        id: "portfolioAlpha",
-        name: "Portfolio Alpha",
-        memberCodes: ["P", "H", "Ag"],
-        members: [
-            { code: "P", name: "Prem", ratio: 3 },
-            { code: "H", name: "Himanshu", ratio: 4 },
-            { code: "Ag", name: "Angat", ratio: 3 },
-        ],
-        active: true,
-    },
-    portfolioBeta: {
-        id: "portfolioBeta",
-        name: "Portfolio Beta",
-        memberCodes: ["P", "H", "Ana"],
-        members: [
-            { code: "P", name: "Prem", ratio: 1 },
-            { code: "H", name: "Himanshu", ratio: 1 },
-            { code: "Ana", name: "Anamika", ratio: 1 },
-        ],
-        active: true,
-    },
-};
-
-export const ensureFixedPortfolios = async () => {
-    await Promise.all(
-        Object.values(fixedPortfolios).map(async (portfolio) => {
-            const portfolioRef = doc(db, "portfolios", portfolio.id);
-            const existingPortfolio = await getDoc(portfolioRef);
-
-            await setDoc(
-                portfolioRef,
-                {
-                    ...portfolio,
-                    updatedAt: serverTimestamp(),
-                    ...(existingPortfolio.exists() ? {} : { createdAt: serverTimestamp() }),
-                },
-                { merge: true },
-            );
-        }),
-    );
-};
+import type { Portfolio, PortfolioId, PortfolioMember, PsrVersion } from "../types/portfolio";
 
 export const getPortfolios = async (): Promise<Portfolio[]> => {
-    await ensureFixedPortfolios();
-
-    const portfoliosQuery = query(collection(db, "portfolios"), orderBy("name", "asc"));
+    const portfoliosQuery = query(
+        collection(db, "portfolios"), 
+        orderBy("name", "asc")
+    );
+    
     const snapshot = await getDocs(portfoliosQuery);
 
-    const portfolios = snapshot.docs.map((portfolioDoc) => {
+    return snapshot.docs.map((portfolioDoc) => {
         const data = portfolioDoc.data() as Omit<Portfolio, "id">;
-
         return {
             ...data,
-            id: portfolioDoc.id as PortfolioId,
+            id: portfolioDoc.id,
             createdAt: data.createdAt ?? null,
             updatedAt: data.updatedAt ?? null,
         };
     });
-
-    let psrSnap;
-
-    try {
-        psrSnap = await getDocs(
-            collection(db, "profit_sharing_ratios")
-        );
-    } catch (err) {
-        console.error("PSR FETCH FAILED:", err);
-        throw err;
-    }
-
-    const activePsrs = new Map(
-        psrSnap.docs.map((doc) => [doc.id, doc.data()])
-    );
-
-    // Merge PSR into portfolios
-    return portfolios.map((p) => {
-        try {
-            const psrData = activePsrs.get(p.id);
-
-            if (
-                psrData &&
-                Array.isArray((psrData as any).members)
-            ) {
-                const ratioMap = new Map<string, number>(
-                    (psrData as any).members.map((m: any) => [
-                        m.memberCode,
-                        m.ratio,
-                    ])
-                );
-
-                const updatedMembers = p.members.map((m) => ({
-                    ...m,
-                    ratio: ratioMap.get(m.code) ?? m.ratio,
-                }));
-
-                return {
-                    ...p,
-                    members: updatedMembers,
-                };
-            }
-
-            return p;
-        } catch (err) {
-            console.error("PSR MERGE ERROR:", err);
-            return p;
-        }
-    });
 };
 
-export const getPortfolioById = (portfolioId: PortfolioId) => fixedPortfolios[portfolioId];
+export const getPortfolioById = async (portfolioId: PortfolioId): Promise<Portfolio | null> => {
+    const portfolioRef = doc(db, "portfolios", portfolioId);
+    const snapshot = await getDoc(portfolioRef);
+    if (!snapshot.exists()) return null;
+    const data = snapshot.data() as Omit<Portfolio, "id">;
+    return {
+        ...data,
+        id: snapshot.id,
+        createdAt: data.createdAt ?? null,
+        updatedAt: data.updatedAt ?? null,
+    };
+};
+
+export const createPsrVersion = async (
+    portfolioId: PortfolioId,
+    members: PortfolioMember[],
+    createdByUid: string
+): Promise<string> => {
+    const psrRef = collection(db, "portfolios", portfolioId, "psrVersions");
+    
+    // Determine the next version number
+    const psrSnap = await getDocs(psrRef);
+    const nextVersion = `v${psrSnap.size + 1}`;
+
+    const newVersion: Omit<PsrVersion, "id"> = {
+        portfolioId,
+        members,
+        validFrom: serverTimestamp() as any,
+        createdByUid,
+        createdAt: serverTimestamp() as any,
+    };
+
+    const docRef = await setDoc(doc(psrRef, nextVersion), newVersion);
+    return nextVersion;
+};

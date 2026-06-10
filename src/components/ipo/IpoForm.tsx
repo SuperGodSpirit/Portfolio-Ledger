@@ -1,7 +1,7 @@
 import { Save } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { IpoFormValues, IpoMemberEntry, IpoStatus } from "../../types/ipo";
-import type { Portfolio, PortfolioId } from "../../types/portfolio";
+import type { Portfolio, PortfolioId, PortfolioMember } from "../../types/portfolio";
 import Button from "../ui/Button";
 import { calculateIpoSettlement } from "../../utils/calculationEngine";
 import SettlementPreview from "./SettlementPreview";
@@ -17,15 +17,15 @@ type IpoFormProps = {
 const emptyMemberFields: Partial<IpoMemberEntry> = {};
 
 const createEntriesForPortfolio = (
-  portfolio: Portfolio | undefined,
+  members: PortfolioMember[],
   existingEntries: Record<string, IpoMemberEntry> = {},
 ) => {
-  if (!portfolio) {
+  if (!members || members.length === 0) {
     return {};
   }
 
   return Object.fromEntries(
-    portfolio.members.map((member) => {
+    members.map((member) => {
       const existingEntry = existingEntries[member.code];
 
       return [
@@ -73,8 +73,9 @@ const IpoForm = ({
   );
 
   useEffect(() => {
-    setMemberEntries(createEntriesForPortfolio(selectedPortfolio, initialValues?.memberEntries));
-  }, [initialValues?.memberEntries, selectedPortfolio]);
+    const membersToUse = initialValues?.lockedPsr || selectedPortfolio?.members || [];
+    setMemberEntries(createEntriesForPortfolio(membersToUse, initialValues?.memberEntries));
+  }, [initialValues?.memberEntries, initialValues?.lockedPsr, selectedPortfolio]);
 
   const computedMemberEntries = useMemo(() => {
     const lv = isLegacy ? 0 : parseInt(lotValueStr, 10) || 0;
@@ -107,9 +108,10 @@ const IpoForm = ({
 
   const calculationSnapshot = useMemo(() => {
     if (!selectedPortfolio) return null;
+    const membersToUse = initialValues?.lockedPsr || selectedPortfolio.members;
     return calculateIpoSettlement(
       computedMemberEntries, 
-      selectedPortfolio.members, 
+      membersToUse, 
       initialValues?.calculationSnapshot?.settlementInstructions
     );
   }, [computedMemberEntries, selectedPortfolio, initialValues]);
@@ -159,6 +161,7 @@ const IpoForm = ({
       ipoName: ipoName.trim(),
       portfolioId: selectedPortfolio.id,
       portfolioName: selectedPortfolio.name,
+      lockedPsr: initialValues?.lockedPsr || selectedPortfolio.members,
       allotmentDate,
       lotValue: finalLotValue,
       status,

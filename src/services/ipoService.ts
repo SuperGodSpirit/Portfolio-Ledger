@@ -183,9 +183,9 @@ export const getIpos = async (user: LedgerUser): Promise<IpoRecord[]> => {
   if (user.role === "owner" || user.role === "manager") {
     iposQuery = query(collection(db, "ipos"));
   } else {
-    const allowedPortfolios: string[] = [];
-    if (user.portfolioAlpha) allowedPortfolios.push("portfolioAlpha");
-    if (user.portfolioBeta) allowedPortfolios.push("portfolioBeta");
+    const allowedPortfolios: string[] = user.portfolios ? [...user.portfolios] : [];
+    if (user.portfolioAlpha && !allowedPortfolios.includes("portfolioAlpha")) allowedPortfolios.push("portfolioAlpha");
+    if (user.portfolioBeta && !allowedPortfolios.includes("portfolioBeta")) allowedPortfolios.push("portfolioBeta");
 
     if (allowedPortfolios.length === 0) {
       return [];
@@ -216,14 +216,10 @@ export const filterIposForUser = (ipos: IpoRecord[], user: LedgerUser) => {
   }
 
   return ipos.filter((ipo) => {
-    if (ipo.portfolioId === "portfolioAlpha") {
-      return user.portfolioAlpha;
-    }
-
-    if (ipo.portfolioId === "portfolioBeta") {
-      return user.portfolioBeta;
-    }
-
-    return false;
+    const allowedPortfolios: string[] = user.portfolios ? [...user.portfolios] : [];
+    if (user.portfolioAlpha && !allowedPortfolios.includes("portfolioAlpha")) allowedPortfolios.push("portfolioAlpha");
+    if (user.portfolioBeta && !allowedPortfolios.includes("portfolioBeta")) allowedPortfolios.push("portfolioBeta");
+    
+    return allowedPortfolios.includes(ipo.portfolioId);
   });
 };

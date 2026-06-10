@@ -1,6 +1,8 @@
 import { useAuth } from "../../context/AuthContext";
-import { fixedPortfolios } from "../../services/portfolioService";
+import { getPortfolios } from "../../services/portfolioService";
 import { Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { Portfolio } from "../../types/portfolio";
 
 const getAvatarColor = (name: string) => {
   const colors = [
@@ -33,20 +35,25 @@ const getPLColorClass = (pl: number) => {
 
 const PortfolioAccessPanel = ({ 
   readOnly = false,
-  alphaProfit = 0,
-  betaProfit = 0
+  portfolioProfits = {},
+  userPortfolioProfits = {}
 }: { 
   readOnly?: boolean,
-  alphaProfit?: number,
-  betaProfit?: number 
+  portfolioProfits?: Record<string, number>,
+  userPortfolioProfits?: Record<string, number> 
 }) => {
   const { ledgerUser } = useAuth();
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+
+  useEffect(() => {
+    void getPortfolios().then(setPortfolios);
+  }, []);
   
   const canManage = ledgerUser?.role === "owner" || ledgerUser?.role === "manager";
 
-  const allPortfolios = Object.values(fixedPortfolios).map((fp) => ({
+  const allPortfolios = portfolios.map((fp) => ({
     ...fp,
-    enabled: fp.id === "portfolioAlpha" ? ledgerUser?.portfolioAlpha : ledgerUser?.portfolioBeta,
+    enabled: ledgerUser?.portfolios?.includes(fp.id) || (fp.id === "portfolioAlpha" && ledgerUser?.portfolioAlpha) || (fp.id === "portfolioBeta" && ledgerUser?.portfolioBeta),
   }));
 
   const visiblePortfolios = canManage ? allPortfolios : allPortfolios.filter((p) => p.enabled);
@@ -56,8 +63,9 @@ const PortfolioAccessPanel = ({
   return (
     <section className="flex flex-col gap-5">
       {visiblePortfolios.map((portfolio) => {
-        const totalRatio = portfolio.members.reduce((sum, m) => sum + m.ratio, 0);
-        const profit = portfolio.id === 'portfolioAlpha' ? alphaProfit : betaProfit;
+        const totalRatio = portfolio.members.reduce((sum: number, m: any) => sum + m.ratio, 0);
+        const profit = readOnly ? (userPortfolioProfits[portfolio.id] || 0) : (portfolioProfits[portfolio.id] || 0);
+        const profitLabel = readOnly ? "Your Profit" : "Total Portfolio Profit";
         
         return (
           <div key={portfolio.id} className="rounded-lg border border-white/5 bg-[#111827] p-3 sm:p-4 shadow-sm transition-all hover:border-white/10">
@@ -74,7 +82,7 @@ const PortfolioAccessPanel = ({
 
               {/* Profit Prominently Displayed */}
               <div className="flex flex-col">
-                <span className="text-xs text-ledger-gray mb-1">Total Portfolio Profit</span>
+                <span className="text-xs text-ledger-gray mb-1">{profitLabel}</span>
                 <span className={`font-mono text-2xl font-bold tracking-tight ${getPLColorClass(profit)}`}>
                   {formatPL(profit)}
                 </span>
@@ -86,7 +94,7 @@ const PortfolioAccessPanel = ({
                 Allocation
               </h4>
               <ul className="space-y-2">
-                {portfolio.members.map((member) => {
+                {portfolio.members.map((member: any) => {
                   const percentage = totalRatio > 0 ? (member.ratio / totalRatio) * 100 : 0;
                   const displayValue = percentage % 1 === 0 ? percentage.toFixed(0) : percentage.toFixed(2);
                   const avatarTheme = getAvatarColor(member.name);

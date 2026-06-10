@@ -18,7 +18,15 @@ const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (!ledgerUser || !ledgerUser.active) {
+  if (!ledgerUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (ledgerUser.status === "pending" || ledgerUser.role === "guest") {
+    return <Navigate to="/pending" replace />;
+  }
+
+  if (ledgerUser.status === "deactivated" || ledgerUser.active === false) {
     return <Navigate to="/login" replace />;
   }
 

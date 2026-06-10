@@ -9,9 +9,10 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import { getIpoById, updateSettlementStatus } from "../services/ipoService";
 import type { IpoRecord } from "../types/ipo";
 import { calculateIpoSettlement } from "../utils/calculationEngine";
-import { fixedPortfolios } from "../services/portfolioService";
+import { getPortfolioById } from "../services/portfolioService";
 import { getAuditLogsForIpo } from "../services/auditService";
 import type { AuditLog } from "../types/audit";
+import type { Portfolio } from "../types/portfolio";
 
 type IpoDetailViewPageProps = {
   basePath: "/owner" | "/manager" | "/viewer";
@@ -27,6 +28,7 @@ const IpoDetailViewPage = ({ basePath }: IpoDetailViewPageProps) => {
   const { ledgerUser } = useAuth();
   const { ipoId } = useParams<{ ipoId: string }>();
   const [ipo, setIpo] = useState<IpoRecord | null>(null);
+  const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +39,10 @@ const IpoDetailViewPage = ({ basePath }: IpoDetailViewPageProps) => {
       try {
         const data = await getIpoById(ipoId);
         setIpo(data);
+        if (data) {
+          const p = await getPortfolioById(data.portfolioId);
+          setPortfolio(p);
+        }
         if (ledgerUser) {
           const logs = await getAuditLogsForIpo(ipoId, ledgerUser);
           setAuditLogs(logs);
@@ -85,14 +91,21 @@ const IpoDetailViewPage = ({ basePath }: IpoDetailViewPageProps) => {
 
   const snapshotToDisplay = useMemo(() => {
     if (!ipo) return null;
-    if (ipo.calculationSnapshot) return ipo.calculationSnapshot;
+    let snap = ipo.calculationSnapshot;
     
     // Fallback for older IPOs that don't have a snapshot
-    const portfolio = Object.values(fixedPortfolios).find((p) => p.id === ipo.portfolioId);
-    if (!portfolio) return null;
+    if (!snap && portfolio) {
+      snap = calculateIpoSettlement(ipo.memberEntries, portfolio.members);
+    }
     
-    return calculateIpoSettlement(ipo.memberEntries, portfolio.members);
-  }, [ipo]);
+    // Add totalInvestment if missing (e.g. from legacy records)
+    if (snap && snap.totalInvestment === undefined) {
+      const totalInv = Object.values(ipo.memberEntries || {}).reduce((sum, entry) => sum + (entry.allottedAmount || 0), 0);
+      snap = { ...snap, totalInvestment: totalInv };
+    }
+    
+    return snap;
+  }, [ipo, portfolio]);
 
   if (isLoading) return <Spinner label="Loading details" />;
 

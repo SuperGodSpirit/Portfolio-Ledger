@@ -5,7 +5,8 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import { getAuditLogs } from "../services/auditService";
 import type { AuditLog } from "../types/audit";
 import Spinner from "../components/ui/Spinner";
-import { fixedPortfolios } from "../services/portfolioService";
+import { getPortfolios } from "../services/portfolioService";
+import type { Portfolio } from "../types/portfolio";
 
 type AuditLogPageProps = {
   basePath: "/owner" | "/manager" | "/viewer";
@@ -20,6 +21,7 @@ const titleByBasePath = {
 const AuditLogPage = ({ basePath }: AuditLogPageProps) => {
   const { ledgerUser } = useAuth();
   const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const [portfolioFilter, setPortfolioFilter] = useState<string>("all");
@@ -29,6 +31,7 @@ const AuditLogPage = ({ basePath }: AuditLogPageProps) => {
   const [eventFilter, setEventFilter] = useState("all");
 
   useEffect(() => {
+    void getPortfolios().then(setPortfolios);
     const fetchLogs = async () => {
       if (!ledgerUser) return;
       try {
@@ -80,7 +83,7 @@ const AuditLogPage = ({ basePath }: AuditLogPageProps) => {
           className="h-10 w-full rounded border border-ledger-line bg-[#101418] px-3 text-sm text-white outline-none focus:border-ledger-green"
         >
           <option value="all">All Portfolios</option>
-          {Object.values(fixedPortfolios).map((p) => (
+          {portfolios.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
         </select>
