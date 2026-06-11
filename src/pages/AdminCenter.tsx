@@ -12,10 +12,10 @@ const AdminCenter = () => {
     return (
         <DashboardLayout title="Dashboard" subtitle="Admin Center">
 
-            <div className="mb-6 flex space-x-1 rounded-lg bg-[#151a20] p-1 border border-ledger-line w-fit">
+            <div className="mb-6 flex space-x-1 rounded-lg bg-[#151a20] p-1 border border-ledger-line w-full sm:w-fit">
                 <button
                     onClick={() => setActiveTab("users")}
-                    className={`flex items-center space-x-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                    className={`flex-1 sm:flex-none flex justify-center items-center space-x-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                         activeTab === "users"
                             ? "bg-[#2a2f36] text-white shadow-sm"
                             : "text-[#8793a3] hover:bg-[#1a2027] hover:text-white"
@@ -26,7 +26,7 @@ const AdminCenter = () => {
                 </button>
                 <button
                     onClick={() => setActiveTab("portfolios")}
-                    className={`flex items-center space-x-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                    className={`flex-1 sm:flex-none flex justify-center items-center space-x-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                         activeTab === "portfolios"
                             ? "bg-[#2a2f36] text-white shadow-sm"
                             : "text-[#8793a3] hover:bg-[#1a2027] hover:text-white"

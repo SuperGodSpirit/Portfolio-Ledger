@@ -11,6 +11,7 @@ const UserManagement = () => {
     const [users, setUsers] = useState<LedgerUser[]>([]);
     const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showDeactivated, setShowDeactivated] = useState(false);
 
     const fetchData = async () => {
         setLoading(true);
@@ -83,9 +84,24 @@ const UserManagement = () => {
 
     if (loading) return <Spinner label="Loading users..." />;
 
+    const filteredUsers = showDeactivated ? users : users.filter(u => u.status !== "deactivated");
+
     return (
-        <div className="space-y-6">
-            <div className="overflow-x-auto">
+        <div className="space-y-4">
+            <div className="flex justify-end mb-2">
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-[#8793a3] hover:text-white transition-colors">
+                    <input 
+                        type="checkbox" 
+                        checked={showDeactivated} 
+                        onChange={(e) => setShowDeactivated(e.target.checked)}
+                        className="rounded bg-[#101418] border-ledger-line text-ledger-green focus:ring-ledger-green focus:ring-offset-0"
+                    />
+                    Show deactivated users
+                </label>
+            </div>
+
+            {/* Desktop View */}
+            <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm text-left">
                     <thead className="text-xs text-[#8793a3] uppercase bg-[#151a20] border-b border-ledger-line">
                         <tr>
@@ -97,7 +113,7 @@ const UserManagement = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {users.map(user => (
+                        {filteredUsers.map(user => (
                             <tr key={user.uid} className="border-b border-ledger-line last:border-0 hover:bg-[#151a20]/50 transition-colors">
                                 <td className="px-4 py-3 font-medium text-white">{user.name}</td>
                                 <td className="px-4 py-3"><StatusBadge status={user.status} /></td>
@@ -156,6 +172,74 @@ const UserManagement = () => {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Mobile View */}
+            <div className="md:hidden space-y-4">
+                {filteredUsers.map(user => (
+                    <div key={user.uid} className="bg-[#151a20] border border-ledger-line rounded-lg p-4 space-y-4">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h4 className="text-white font-medium">{user.name}</h4>
+                                <p className="text-[#9aa6b5] text-xs capitalize mt-0.5">{user.role}</p>
+                            </div>
+                            <StatusBadge status={user.status} />
+                        </div>
+                        
+                        <div>
+                            <p className="text-xs text-[#8793a3] uppercase mb-2 font-semibold">Assigned Portfolios</p>
+                            {(user.role === 'owner' || user.role === 'manager') ? (
+                                <span className="text-xs text-[#8793a3] italic">All Portfolios (Full Access)</span>
+                            ) : (
+                                <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                                    {portfolios.map(p => {
+                                        const isAssigned = user.portfolios.includes(p.id);
+                                        return (
+                                            <button
+                                                key={p.id}
+                                                onClick={() => togglePortfolio(user, p.id)}
+                                                className={`px-3 py-1.5 text-xs rounded border transition-colors ${
+                                                    isAssigned 
+                                                        ? "bg-ledger-green/20 border-ledger-green text-ledger-green" 
+                                                        : "bg-transparent border-ledger-line text-[#8793a3] hover:text-white"
+                                                }`}
+                                            >
+                                                {p.name}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="pt-3 border-t border-ledger-line/50 flex justify-end">
+                            {(user.role === 'owner' || user.role === 'manager') ? (
+                                <span className="text-xs text-[#8793a3] italic">Admin Access</span>
+                            ) : user.status === "pending" ? (
+                                <button 
+                                    onClick={() => handleUpdateUser(user.uid, { status: "active" })}
+                                    className="text-ledger-green hover:text-ledger-green/80 text-sm font-medium flex items-center bg-ledger-green/10 px-3 py-2 rounded"
+                                >
+                                    <CheckCircle className="w-4 h-4 mr-1.5" /> Approve
+                                </button>
+                            ) : user.status === "active" ? (
+                                <button 
+                                    onClick={() => handleUpdateUser(user.uid, { status: "deactivated" })}
+                                    className="text-red-400 hover:text-red-300 text-sm font-medium flex items-center bg-red-400/10 px-3 py-2 rounded"
+                                >
+                                    <ShieldAlert className="w-4 h-4 mr-1.5" /> Deactivate
+                                </button>
+                            ) : (
+                                <button 
+                                    onClick={() => handleUpdateUser(user.uid, { status: "active" })}
+                                    className="text-ledger-green hover:text-ledger-green/80 text-sm font-medium flex items-center bg-ledger-green/10 px-3 py-2 rounded"
+                                >
+                                    <CheckCircle className="w-4 h-4 mr-1.5" /> Reactivate
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );

@@ -241,8 +241,8 @@ const DashboardShell = ({ basePath, readOnly = false, portfolioIdFilter }: Dashb
     return "text-white";
   };
 
-  const solidCardClass = "rounded-xl border border-white/5 bg-[#151c28] p-5 shadow-lg transition-all hover:border-white/10";
-  const primaryCardClass = "rounded-2xl border border-white/10 bg-[#111827] p-6 sm:p-8 shadow-2xl relative overflow-hidden";
+  const solidCardClass = "rounded-xl border border-ledger-line bg-[#12171c] p-5 transition-colors hover:border-[#374151]";
+  const primaryCardClass = "rounded-2xl border border-ledger-line bg-[#0a0d11] p-6 sm:p-8 relative overflow-hidden";
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row">

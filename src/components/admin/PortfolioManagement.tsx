@@ -22,6 +22,8 @@ const PortfolioManagement = () => {
     const [isCreating, setIsCreating] = useState(false);
     const [newPortfolioName, setNewPortfolioName] = useState("");
     const [newPortfolioId, setNewPortfolioId] = useState("");
+    
+    const [showArchived, setShowArchived] = useState(false);
 
     const fetchData = async () => {
         setLoading(true);
@@ -151,20 +153,31 @@ const PortfolioManagement = () => {
         u.status !== "deactivated"
     );
 
-    if (loading) return <Spinner label="Loading portfolios..." />;
+    const filteredPortfolios = showArchived ? portfolios : portfolios.filter(p => p.status !== "archived");
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center border-b border-ledger-line pb-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border-b border-ledger-line pb-4">
                 <h3 className="text-white font-semibold flex items-center"><Briefcase className="w-5 h-5 mr-2 text-ledger-green"/> Portfolios & PSR</h3>
-                {!isCreating && (
-                    <button 
-                        onClick={() => setIsCreating(true)}
-                        className="text-xs bg-ledger-green text-black px-3 py-2 rounded font-semibold flex items-center"
-                    >
-                        <Plus className="w-4 h-4 mr-1" /> New Portfolio
-                    </button>
-                )}
+                <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                    <label className="flex items-center gap-2 cursor-pointer text-sm text-[#8793a3] hover:text-white transition-colors w-full sm:w-auto justify-end">
+                        <input 
+                            type="checkbox" 
+                            checked={showArchived} 
+                            onChange={(e) => setShowArchived(e.target.checked)}
+                            className="rounded bg-[#101418] border-ledger-line text-ledger-green focus:ring-ledger-green focus:ring-offset-0"
+                        />
+                        Show archived portfolios
+                    </label>
+                    {!isCreating && (
+                        <button 
+                            onClick={() => setIsCreating(true)}
+                            className="text-xs bg-ledger-green text-black px-3 py-2 rounded font-semibold flex items-center justify-center w-full sm:w-auto shrink-0"
+                        >
+                            <Plus className="w-4 h-4 mr-1" /> New Portfolio
+                        </button>
+                    )}
+                </div>
             </div>
 
             {isCreating && (
@@ -188,23 +201,23 @@ const PortfolioManagement = () => {
                         />
                     </div>
                     <div className="flex gap-2 w-full md:w-auto">
-                        <button onClick={handleCreatePortfolio} className="px-4 py-2 bg-ledger-green text-black font-medium rounded text-sm whitespace-nowrap">Create</button>
-                        <button onClick={() => setIsCreating(false)} className="px-4 py-2 bg-[#2a2f36] text-white font-medium rounded text-sm whitespace-nowrap">Cancel</button>
+                        <button onClick={handleCreatePortfolio} className="px-4 py-2 bg-ledger-green text-black font-medium rounded text-sm whitespace-nowrap flex-1 md:flex-none">Create</button>
+                        <button onClick={() => setIsCreating(false)} className="px-4 py-2 bg-[#2a2f36] text-white font-medium rounded text-sm whitespace-nowrap flex-1 md:flex-none">Cancel</button>
                     </div>
                 </div>
             )}
 
             <div className="grid gap-4 md:grid-cols-2">
-                {portfolios.map(portfolio => (
+                {filteredPortfolios.map(portfolio => (
                     <div key={portfolio.id} className={`border border-ledger-line rounded-lg bg-[#151a20] overflow-hidden ${portfolio.status === "archived" ? "opacity-60" : ""}`}>
-                        <div className="p-4 border-b border-ledger-line/50 flex justify-between items-center bg-[#101418]">
+                        <div className="p-4 border-b border-ledger-line/50 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-[#101418]">
                             <div>
                                 <h4 className="text-white font-semibold">{portfolio.name}</h4>
                                 <p className="text-xs text-[#8793a3]">ID: {portfolio.id} &bull; {portfolio.status}</p>
                             </div>
                             <button 
                                 onClick={() => handleToggleArchive(portfolio)}
-                                className={`text-xs px-3 py-1.5 rounded transition-colors ${portfolio.status === "archived" ? "bg-ledger-line text-white hover:bg-ledger-line/80" : "bg-orange-500/10 text-orange-400 hover:bg-orange-500/20"}`}
+                                className={`text-xs px-3 py-1.5 rounded flex justify-center items-center transition-colors w-full sm:w-auto ${portfolio.status === "archived" ? "bg-ledger-line text-white hover:bg-ledger-line/80" : "bg-orange-500/10 text-orange-400 hover:bg-orange-500/20"}`}
                             >
                                 <Archive className="w-3 h-3 inline mr-1" />
                                 {portfolio.status === "archived" ? "Unarchive" : "Archive"}
@@ -214,7 +227,7 @@ const PortfolioManagement = () => {
                         <div className="p-4">
                             {editingPortfolioId === portfolio.id ? (
                                 <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                                         <span className="text-xs uppercase text-ledger-green font-semibold tracking-wider">Edit Members & PSR (%)</span>
                                         <span className="text-xs text-[#8793a3]">Total: {editMembers.reduce((s, m) => s + m.ratio, 0).toFixed(2)}%</span>
                                     </div>
@@ -225,10 +238,10 @@ const PortfolioManagement = () => {
                                             const isDeactivated = globalUser?.status === "deactivated";
                                             return (
                                                 <div key={member.code} className="flex items-center gap-2">
-                                                    <div className={`flex-1 flex items-center border rounded px-2 py-1.5 text-sm ${isDeactivated ? 'bg-red-500/5 border-red-500/30 text-red-400' : 'bg-[#101418] border-ledger-line text-[#8793a3] opacity-70'}`}>
-                                                        {isDeactivated && <ShieldAlert className="w-3 h-3 mr-1.5" />}
-                                                        <span>{member.name}</span>
-                                                        {isDeactivated && <span className="ml-auto text-[10px] uppercase font-bold text-red-500/70">Deactivated</span>}
+                                                    <div className={`flex-1 min-w-0 flex items-center border rounded px-2 py-1.5 text-sm ${isDeactivated ? 'bg-red-500/5 border-red-500/30 text-red-400' : 'bg-[#101418] border-ledger-line text-[#8793a3] opacity-70'}`}>
+                                                        {isDeactivated && <ShieldAlert className="w-3 h-3 mr-1.5 shrink-0" />}
+                                                        <span className="truncate">{member.name}</span>
+                                                        {isDeactivated && <span className="ml-auto pl-1 text-[10px] uppercase font-bold text-red-500/70 shrink-0">Deactivated</span>}
                                                     </div>
                                                     <input 
                                                         type="number" 

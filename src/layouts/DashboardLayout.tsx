@@ -58,21 +58,21 @@ const DashboardLayout = ({
 
   return (
     <main className="min-h-screen bg-ledger-ink text-ledger-steel">
-      <header className="sticky top-0 z-40 border-b border-white/5 bg-[#12171c]/80 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-white/5 bg-[#12171c]/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-4 sm:gap-6 sm:px-6">
           <div className="flex items-center gap-6">
             <Link
               to={ledgerUser ? `/${ledgerUser.role}` : "/"}
               className="flex items-center gap-4 transition hover:opacity-80"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded border border-ledger-line bg-ledger-panel">
+              <div className="flex h-11 w-11 items-center justify-center rounded border border-ledger-line bg-[#0a0d11]">
                 <WalletCards className="h-5 w-5 text-ledger-green" aria-hidden="true" />
               </div>
               <div className="hidden sm:block">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#8793a3]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#8793a3]">
                   Portfolio Ledger
                 </p>
-                <h1 className="text-xl font-semibold text-white">{title}</h1>
+                <h1 className="text-xl font-semibold text-white tracking-tight">{title}</h1>
               </div>
             </Link>
           </div>
@@ -85,7 +85,7 @@ const DashboardLayout = ({
                 </Button>
                 
                 {isMenuOpen && (
-                  <div className="absolute top-full right-0 mt-3 w-56 rounded border border-ledger-line bg-ledger-panel p-2 shadow-2xl">
+                  <div className="absolute top-full right-0 mt-3 w-56 rounded border border-ledger-line bg-[#0a0d11] p-2 shadow-xl shadow-black/50">
                     <nav className="space-y-1">
                       {navLinks.map((link) => (
                         <NavLink
@@ -96,7 +96,7 @@ const DashboardLayout = ({
                             `flex items-center gap-3 rounded px-4 py-2.5 text-sm font-medium transition-colors ${
                               isActive
                                 ? "bg-ledger-green/10 text-ledger-green"
-                                : "text-[#8793a3] hover:bg-[#1a2128] hover:text-white"
+                                : "text-[#8793a3] hover:bg-[#151a20] hover:text-white"
                             }`
                           }
                         >
@@ -105,8 +105,8 @@ const DashboardLayout = ({
                         </NavLink>
                       ))}
                     </nav>
-                    <div className="mt-4 border-t border-white/5 pt-3 text-center">
-                      <p className="text-[10px] uppercase tracking-widest text-ledger-gray">Portfolio Ledger v{__APP_VERSION__}</p>
+                    <div className="mt-4 border-t border-ledger-line pt-3 text-center">
+                      <p className="text-[10px] uppercase tracking-widest text-[#8793a3]">Portfolio Ledger v{__APP_VERSION__}</p>
                     </div>
                   </div>
                 )}
@@ -123,10 +123,10 @@ const DashboardLayout = ({
 
       <div className="mx-auto flex max-w-[1400px]">
         <div className="flex-1 p-4 sm:p-6 md:p-8">
-          <section className="mb-6 flex flex-col justify-between gap-4 border-b border-white/5 pb-6 md:mb-8 md:flex-row md:items-end">
+          <section className="mb-6 flex flex-col justify-between gap-4 border-b border-ledger-line pb-6 md:mb-8 md:flex-row md:items-end">
             <div>
-              <p className="mb-2 text-sm text-[#9aa6b5]">{ledgerUser?.name}</p>
-              <h2 className="text-3xl font-semibold text-white">{subtitle}</h2>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#8793a3]">{ledgerUser?.name}</p>
+              <h2 className="text-3xl font-semibold text-white tracking-tight">{subtitle}</h2>
             </div>
             {headerRight && (
               <div className="mt-4 md:mt-0">

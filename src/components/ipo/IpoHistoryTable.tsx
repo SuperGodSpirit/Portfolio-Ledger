@@ -51,49 +51,49 @@ const IpoHistoryTable = ({ ipos, basePath, canManage, onArchive, onRestore }: Ip
   }
 
   return (
-    <section className="overflow-hidden rounded-xl border border-white/5 bg-ledger-panel/80 backdrop-blur-md shadow-xl">
+    <section className="overflow-hidden rounded-xl border border-white/5 bg-[#0a0d11] shadow-xl">
       <div className="hidden md:block overflow-x-auto hide-scrollbar">
         <table className="w-full min-w-[920px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-white/5 bg-[#151a20]/80 text-left text-xs uppercase tracking-[0.16em] text-ledger-gray">
-              <th className="px-5 py-4 font-semibold">IPO Name</th>
-              <th className="px-5 py-4 font-semibold">Portfolio</th>
-              <th className="px-5 py-4 font-semibold">Allotment Date</th>
-              <th className="px-5 py-4 font-semibold text-right">Profit/Loss</th>
-              <th className="px-5 py-4 font-semibold">Created By</th>
-              <th className="px-5 py-4 font-semibold">Last Modified</th>
-              <th className="px-5 py-4 font-semibold">Status</th>
-              {canManage ? <th className="px-5 py-4 text-right font-semibold">Actions</th> : null}
+            <tr className="border-b border-white/5 bg-[#12171c] text-left text-[10px] font-bold uppercase tracking-[0.2em] text-[#8793a3]">
+              <th className="px-5 py-4">IPO Name</th>
+              <th className="px-5 py-4">Portfolio</th>
+              <th className="px-5 py-4">Allotment Date</th>
+              <th className="px-5 py-4 text-right">Profit/Loss</th>
+              <th className="px-5 py-4">Created By</th>
+              <th className="px-5 py-4">Last Modified</th>
+              <th className="px-5 py-4">Status</th>
+              {canManage ? <th className="px-5 py-4 text-right">Actions</th> : null}
             </tr>
           </thead>
           <tbody>
             {ipos.map((ipo) => (
-              <tr key={ipo.id} className="border-b border-white/5 last:border-0 hover:bg-[#1a2128]/50 transition-colors">
+              <tr key={ipo.id} className="border-b border-white/5 last:border-0 hover:bg-[#12171c]/80 transition-colors">
                 <td className="px-5 py-4 font-semibold whitespace-nowrap">
-                  <Link to={`${basePath}/ipos/${ipo.id}`} className="text-white hover:text-ledger-green hover:underline">
+                  <Link to={`${basePath}/ipos/${ipo.id}`} className="text-white hover:text-ledger-green transition-colors">
                     {ipo.ipoName}
                   </Link>
                 </td>
-                <td className="px-5 py-4 text-ledger-steel whitespace-nowrap">{ipo.portfolioName}</td>
-                <td className="px-5 py-4 font-mono text-ledger-steel whitespace-nowrap">{ipo.allotmentDate}</td>
+                <td className="px-5 py-4 font-mono text-ledger-steel whitespace-nowrap">{ipo.portfolioName}</td>
+                <td className="px-5 py-4 font-mono text-[#8793a3] whitespace-nowrap">{ipo.allotmentDate}</td>
                 <td className="px-5 py-4 text-right whitespace-nowrap">
                   {(() => {
                     const pl = ipo.calculationSnapshot?.totalProfitLoss ?? 0;
                     return (
-                      <span className={`font-mono font-semibold ${pl > 0 ? "text-ledger-green" : pl < 0 ? "text-ledger-red" : "text-white"}`}>
+                      <span className={`font-mono font-semibold tracking-tight ${pl > 0 ? "text-ledger-green" : pl < 0 ? "text-ledger-red" : "text-white"}`}>
                         {formatPL(pl)}
                       </span>
                     );
                   })()}
                 </td>
                 <td className="px-5 py-4 text-ledger-steel whitespace-nowrap">{ipo.createdByName}</td>
-                <td className="px-5 py-4 font-mono text-ledger-steel whitespace-nowrap">{formatTimestamp(ipo)}</td>
+                <td className="px-5 py-4 font-mono text-[#8793a3] whitespace-nowrap">{formatTimestamp(ipo)}</td>
                 <td className="px-5 py-4 whitespace-nowrap">
                   <span
-                    className={`rounded px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest ${
+                    className={`rounded px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] border ${
                       ipo.status === "active"
-                        ? "bg-ledger-blue/20 text-ledger-blue"
-                        : "bg-ledger-gray/20 text-ledger-gray"
+                        ? "bg-[#1c2c42] text-[#60a5fa] border-[#2563eb]/30"
+                        : "bg-[#2a3038] text-[#9aa6b5] border-[#4b5563]/30"
                     }`}
                   >
                     {ipo.status === "active" ? "Active" : "Archived"}

@@ -56,7 +56,8 @@ const PortfolioAccessPanel = ({
     enabled: ledgerUser?.portfolios?.includes(fp.id) || (fp.id === "portfolioAlpha" && ledgerUser?.portfolioAlpha) || (fp.id === "portfolioBeta" && ledgerUser?.portfolioBeta),
   }));
 
-  const visiblePortfolios = canManage ? allPortfolios : allPortfolios.filter((p) => p.enabled);
+  const visiblePortfolios = (canManage ? allPortfolios : allPortfolios.filter((p) => p.enabled))
+    .filter(p => p.status !== "archived");
 
   if (visiblePortfolios.length === 0) return null;
 
