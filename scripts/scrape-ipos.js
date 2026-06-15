@@ -144,4 +144,7 @@ async function run() {
   }
 }
 
-run();
+run().catch((error) => {
+  console.error("Fatal error in scraper:", error);
+  process.exit(1);
+});
