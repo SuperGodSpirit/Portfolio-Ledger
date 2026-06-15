@@ -4,6 +4,7 @@ import IpoForm from "../components/ipo/IpoForm";
 import Spinner from "../components/ui/Spinner";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
+import { useLoading } from "../context/LoadingContext";
 import { getIpoById, updateIpo } from "../services/ipoService";
 import { getPortfolios } from "../services/portfolioService";
 import type { IpoFormValues, IpoRecord } from "../types/ipo";
@@ -20,6 +21,7 @@ const titleByBasePath = {
 
 const EditIpoPage = ({ basePath }: EditIpoPageProps) => {
   const { ledgerUser } = useAuth();
+  const { withLoader } = useLoading();
   const { ipoId } = useParams();
   const navigate = useNavigate();
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
@@ -82,7 +84,7 @@ const EditIpoPage = ({ basePath }: EditIpoPageProps) => {
 
     try {
       if (ledgerUser) {
-        await updateIpo(ipoId, values, ledgerUser);
+        await withLoader(() => updateIpo(ipoId, values, ledgerUser));
       }
       navigate(`${basePath}/ipos/${ipoId}`);
     } catch (err) {

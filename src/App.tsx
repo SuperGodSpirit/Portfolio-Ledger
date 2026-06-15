@@ -17,6 +17,7 @@ import TermsConditionsPage from "./pages/TermsConditionsPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import RoleRedirect from "./routes/RoleRedirect";
 import ReportsExportPage from "./pages/ReportsExportPage";
+import MarketIposPage from "./pages/MarketIposPage";
 
 import PendingAccess from "./pages/PendingAccess";
 import DeactivatedAccess from "./pages/DeactivatedAccess";
@@ -32,6 +33,7 @@ const App = () => (
 
     <Route element={<ProtectedRoute allowedRoles={["owner"]} />}>
       <Route path="/owner" element={<OwnerDashboard />} />
+      <Route path="/owner/market" element={<MarketIposPage basePath="/owner" canApply={true} />} />
       <Route path="/owner/ipos" element={<IpoHistoryPage basePath="/owner" />} />
       <Route path="/owner/ipos/add" element={<AddIpoPage basePath="/owner" />} />
       <Route path="/owner/ipos/:ipoId/edit" element={<EditIpoPage basePath="/owner" />} />
@@ -45,6 +47,7 @@ const App = () => (
 
     <Route element={<ProtectedRoute allowedRoles={["manager"]} />}>
       <Route path="/manager" element={<ManagerDashboard />} />
+      <Route path="/manager/market" element={<MarketIposPage basePath="/manager" canApply={true} />} />
       <Route path="/manager/ipos" element={<IpoHistoryPage basePath="/manager" />} />
       <Route path="/manager/ipos/add" element={<AddIpoPage basePath="/manager" />} />
       <Route path="/manager/ipos/:ipoId/edit" element={<EditIpoPage basePath="/manager" />} />
@@ -58,6 +61,7 @@ const App = () => (
 
     <Route element={<ProtectedRoute allowedRoles={["viewer"]} />}>
       <Route path="/viewer" element={<ViewerDashboard />} />
+      <Route path="/viewer/market" element={<MarketIposPage basePath="/viewer" canApply={false} />} />
       <Route path="/viewer/ipos" element={<IpoHistoryPage basePath="/viewer" />} />
       <Route path="/viewer/ipos/:ipoId" element={<IpoDetailViewPage basePath="/viewer" />} />
       <Route path="/viewer/settlements" element={<SettlementCenterPage basePath="/viewer" />} />

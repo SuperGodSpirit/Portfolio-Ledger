@@ -45,6 +45,7 @@ const DashboardLayout = ({
   const basePath = ledgerUser ? `/${ledgerUser.role}` : "";
   const navLinks = [
     { name: "Dashboard", to: basePath, icon: LayoutDashboard, exact: true },
+    { name: "Market IPOs", to: `${basePath}/market`, icon: BarChart3 },
     { name: "Analytics", to: `${basePath}/analytics`, icon: BarChart3 },
     { name: "History", to: `${basePath}/ipos`, icon: History },
     { name: "Settlements", to: `${basePath}/settlements`, icon: ArrowRightLeft },

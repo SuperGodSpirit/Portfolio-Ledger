@@ -1,0 +1,20 @@
+export type MarketIpoStatus = "upcoming" | "active" | "closed" | "listed";
+
+export type MarketIpo = {
+  id: string; // The link or a unique slug
+  name: string;
+  priceBand: string;
+  lotSize: number | null;
+  openDate: string | null;
+  closeDate: string | null;
+  listingDate: string | null;
+  gmp: string | null;
+  status: MarketIpoStatus;
+  sourceLink?: string;
+};
+
+export type MarketIpoFetchMetadata = {
+  lastFetchedAt: string; // ISO timestamp
+  status: "success" | "error";
+  errorMessage?: string;
+};

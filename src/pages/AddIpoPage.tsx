@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import IpoForm from "../components/ipo/IpoForm";
 import Spinner from "../components/ui/Spinner";
 import { useAuth } from "../context/AuthContext";
+import { useLoading } from "../context/LoadingContext";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { createIpo } from "../services/ipoService";
 import { getPortfolios } from "../services/portfolioService";
@@ -20,11 +21,28 @@ const titleByBasePath = {
 
 const AddIpoPage = ({ basePath }: AddIpoPageProps) => {
   const { ledgerUser } = useAuth();
+  const { withLoader } = useLoading();
   const navigate = useNavigate();
+  const location = useLocation();
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const prefillState = location.state as {
+    prefillIpoName?: string;
+    prefillLotValue?: number;
+    prefillPortfolioId?: string;
+    prefillPortfolioName?: string;
+  } | null;
+
+  const initialValues: Partial<IpoFormValues> | undefined = prefillState ? {
+    ipoName: prefillState.prefillIpoName || "",
+    lotValue: prefillState.prefillLotValue || 0,
+    portfolioId: prefillState.prefillPortfolioId as PortfolioId,
+    portfolioName: prefillState.prefillPortfolioName || "",
+    status: "active",
+  } : undefined;
 
   useEffect(() => {
     const loadPortfolios = async () => {
@@ -51,7 +69,7 @@ const AddIpoPage = ({ basePath }: AddIpoPageProps) => {
     setError(null);
 
     try {
-      await createIpo(values, ledgerUser);
+      await withLoader(() => createIpo(values, ledgerUser));
       navigate(`${basePath}/ipos`);
     } catch {
       setError("Unable to create IPO record.");
@@ -73,6 +91,7 @@ const AddIpoPage = ({ basePath }: AddIpoPageProps) => {
       ) : null}
       <IpoForm
         portfolios={portfolios}
+        initialValues={initialValues as IpoFormValues}
         submitLabel="Create IPO"
         isSubmitting={isSubmitting}
         onSubmit={handleSubmit}

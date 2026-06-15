@@ -1,9 +1,11 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { Loader2 } from "lucide-react";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
+  isLoading?: boolean;
   children: ReactNode;
 };
 
@@ -18,11 +20,13 @@ const variants: Record<ButtonVariant, string> = {
     "border-[#5b3232] bg-[#2a1718] text-[#ffb5b5] hover:border-[#7a4545]",
 };
 
-const Button = ({ variant = "primary", className = "", children, ...props }: ButtonProps) => (
+const Button = ({ variant = "primary", className = "", isLoading = false, children, ...props }: ButtonProps) => (
   <button
     className={`inline-flex min-h-11 items-center justify-center gap-2 rounded border px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${variants[variant]} ${className}`}
+    disabled={isLoading || props.disabled}
     {...props}
   >
+    {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
     {children}
   </button>
 );

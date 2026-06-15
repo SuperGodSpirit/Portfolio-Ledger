@@ -1,0 +1,32 @@
+name: Scrape Market IPOs
+
+on:
+  schedule:
+    # Runs at 04:00 and 16:00 UTC every day
+    - cron: '0 4,16 * * *'
+  workflow_dispatch: # Allows manual trigger from the Actions tab
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: './scripts/package-lock.json'
+        
+    - name: Install dependencies
+      working-directory: ./scripts
+      run: npm install
+      
+    - name: Run Scraper
+      working-directory: ./scripts
+      env:
+        FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      run: node scrape-ipos.js

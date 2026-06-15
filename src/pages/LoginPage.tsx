@@ -4,10 +4,12 @@ import { Link, Navigate } from "react-router-dom";
 import PrivateAccessModal from "../components/auth/PrivateAccessModal";
 import Button from "../components/ui/Button";
 import { useAuth } from "../context/AuthContext";
+import { useLoading } from "../context/LoadingContext";
 import AuthLayout from "../layouts/AuthLayout";
 
 const LoginPage = () => {
   const { firebaseUser, ledgerUser, isLoading, error, login } = useAuth();
+  const { withLoader } = useLoading();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -30,7 +32,7 @@ const LoginPage = () => {
     setIsSubmitting(true);
 
     try {
-      await login(email, password);
+      await withLoader(() => login(email, password));
     } catch {
       setFormError("Invalid email or password.");
     } finally {
