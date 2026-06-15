@@ -148,7 +148,7 @@ const MarketIpoDetailModal = ({ ipo, isOpen, onClose, canApply, basePath }: Mark
           <div className="mt-6 space-y-3 rounded bg-ledger-bg p-3 border border-ledger-line">
             <h4 className="font-medium text-white">Apply to Portfolio</h4>
             {loading ? (
-              <div className="flex justify-center p-4">
+              <div className="flex min-h-[92px] items-center justify-center p-4">
                 <Loader2 className="h-6 w-6 animate-spin text-ledger-primary" />
               </div>
             ) : (

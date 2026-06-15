@@ -97,9 +97,9 @@ const MarketIposPage = ({ basePath, canApply = true }: { basePath: string, canAp
     >
       <div className="space-y-8">
         <div>
-          <h2 className="mb-4 text-xl font-bold text-white border-b border-ledger-line pb-2">Active IPOs</h2>
+          <h2 className="mb-4 text-2xl font-bold text-white border-b border-ledger-line pb-2 text-center">Active IPOs</h2>
           {activeIpos.length === 0 ? (
-            <p className="text-sm text-ledger-muted">No active IPOs found.</p>
+            <p className="text-sm text-ledger-muted text-center">No active IPOs found.</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {activeIpos.map(ipo => <IpoCard key={ipo.id} ipo={ipo} />)}
@@ -108,9 +108,9 @@ const MarketIposPage = ({ basePath, canApply = true }: { basePath: string, canAp
         </div>
 
         <div>
-          <h2 className="mb-4 text-xl font-bold text-white border-b border-ledger-line pb-2">Upcoming IPOs</h2>
+          <h2 className="mb-4 text-2xl font-bold text-white border-b border-ledger-line pb-2 text-center">Upcoming IPOs</h2>
           {upcomingIpos.length === 0 ? (
-            <p className="text-sm text-ledger-muted">No upcoming IPOs found.</p>
+            <p className="text-sm text-ledger-muted text-center">No upcoming IPOs found.</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {upcomingIpos.map(ipo => <IpoCard key={ipo.id} ipo={ipo} />)}
@@ -119,9 +119,9 @@ const MarketIposPage = ({ basePath, canApply = true }: { basePath: string, canAp
         </div>
 
         <div>
-          <h2 className="mb-4 text-xl font-bold text-white border-b border-ledger-line pb-2">Recently Closed (Last 5)</h2>
+          <h2 className="mb-4 text-2xl font-bold text-white border-b border-ledger-line pb-2 text-center">Recently Closed (Last 5)</h2>
           {recentIpos.length === 0 ? (
-            <p className="text-sm text-ledger-muted">No recent IPOs found.</p>
+            <p className="text-sm text-ledger-muted text-center">No recent IPOs found.</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {recentIpos.map(ipo => <IpoCard key={ipo.id} ipo={ipo} />)}

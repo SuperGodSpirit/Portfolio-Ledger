@@ -59,7 +59,7 @@ const DashboardLayout = ({
 
   return (
     <main className="min-h-screen bg-ledger-ink text-ledger-steel">
-      <header className="sticky top-0 z-40 border-b border-white/5 bg-[#12171c]/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-40 border-b border-white/5 bg-ledger-ink/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-4 sm:gap-6 sm:px-6">
           <div className="flex items-center gap-6">
             <Link
