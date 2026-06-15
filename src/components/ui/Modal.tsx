@@ -30,15 +30,14 @@ const Modal = ({ title, isOpen, onClose, children }: ModalProps) => {
           <h2 id="modal-title" className="text-lg font-semibold text-white">
             {title}
           </h2>
-          <Button
+          <button
             type="button"
-            variant="ghost"
-            className="min-h-9 w-9 px-0 text-white hover:text-red-400 absolute top-4 right-4"
+            className="text-ledger-muted hover:text-red-400 transition-colors"
             onClick={onClose}
             aria-label="Close modal"
           >
-            <X className="h-6 w-6" aria-hidden="true" />
-          </Button>
+            <X size={28} aria-hidden="true" />
+          </button>
         </div>
         {children}
       </div>

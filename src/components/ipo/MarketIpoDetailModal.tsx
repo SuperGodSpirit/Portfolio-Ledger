@@ -53,6 +53,27 @@ const MarketIpoDetailModal = ({ ipo, isOpen, onClose, canApply, basePath }: Mark
     onClose();
   };
 
+  const parsePrice = (str: string | null | undefined) => {
+    if (!str || str === 'N/A' || str === '-') return null;
+    const match = str.match(/(\d+(\.\d+)?)/g);
+    if (match && match.length > 0) {
+      return parseFloat(match[match.length - 1]); // take upper band
+    }
+    return null;
+  };
+
+  const priceVal = parsePrice(ipo.priceBand);
+  const gmpVal = parsePrice(ipo.gmp);
+  
+  let estListing = 'N/A';
+  let percentage = '';
+  if (priceVal !== null && gmpVal !== null && priceVal > 0) {
+    const total = priceVal + gmpVal;
+    const pct = ((gmpVal / priceVal) * 100).toFixed(2);
+    estListing = `₹${total}`;
+    percentage = ` (${gmpVal >= 0 ? '+' : ''}${pct}%)`;
+  }
+
   return (
     <Modal title="IPO Details" isOpen={isOpen} onClose={onClose}>
       <div className="space-y-4 text-sm text-ledger-text">
@@ -66,12 +87,19 @@ const MarketIpoDetailModal = ({ ipo, isOpen, onClose, canApply, basePath }: Mark
         <div className="grid grid-cols-2 gap-4 border-y border-ledger-line py-3">
           <div>
             <span className="block text-xs text-ledger-muted">Issue Price</span>
-            <span className="font-medium text-white">{ipo.priceBand}</span>
+            <span className="font-medium text-white">{ipo.priceBand !== 'N/A' && ipo.priceBand !== '-' ? `₹${ipo.priceBand.replace(/[^0-9.-]/g, '')}` : 'N/A'}</span>
           </div>
           <div>
-            <span className="block text-xs text-ledger-muted" title="Grey Market Premium">GMP <span className="text-[10px] opacity-70">(Grey Market Premium)</span></span>
-            <span className="font-medium text-white">{ipo.gmp || 'N/A'}</span>
+            <span className="block text-xs text-ledger-muted" title="Grey Market Premium">Est. Profit / Share</span>
+            <span className={`font-medium ${gmpVal !== null && gmpVal > 0 ? 'text-ledger-green' : gmpVal !== null && gmpVal < 0 ? 'text-red-400' : 'text-white'}`}>
+              {ipo.gmp !== 'N/A' && ipo.gmp !== '-' ? `₹${ipo.gmp.replace(/[^0-9.-]/g, '')}` : 'N/A'}
+            </span>
           </div>
+          <div>
+            <span className="block text-xs text-ledger-muted">Est. Listing Price</span>
+            <span className="font-medium text-white">{estListing}<span className="text-xs opacity-70">{percentage}</span></span>
+          </div>
+          <div></div>
           <div>
             <span className="block text-xs text-ledger-muted">Open Date</span>
             <span className="font-medium text-white">{ipo.openDate || 'N/A'}</span>
