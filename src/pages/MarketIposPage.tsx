@@ -61,7 +61,14 @@ const MarketIposPage = ({ basePath, canApply = true }: { basePath: string, canAp
   };
 
   const IpoCard = ({ ipo }: { ipo: MarketIpo }) => {
-    const isGmpPositive = ipo.gmp && ipo.gmp !== 'N/A' && ipo.gmp !== '-' && !ipo.gmp.includes('-');
+    let gmpVal: number | null = null;
+    if (ipo.gmp && ipo.gmp !== 'N/A' && ipo.gmp !== '-') {
+      const match = ipo.gmp.match(/(-?\d+(\.\d+)?)/);
+      if (match) {
+        gmpVal = parseFloat(match[0]);
+      }
+    }
+
     return (
       <div 
         className="cursor-pointer rounded border border-ledger-line bg-ledger-panel p-4 transition-all hover:border-ledger-primary hover:shadow-lg"
@@ -79,8 +86,19 @@ const MarketIposPage = ({ basePath, canApply = true }: { basePath: string, canAp
         <div className="mt-3 flex items-center justify-between text-xs text-ledger-muted">
           <div>
             <span className="block">Close: {ipo.closeDate || 'N/A'}</span>
-            <span className={`block mt-0.5 ${ipo.status === 'active' ? (isGmpPositive ? 'text-ledger-green font-semibold' : 'text-ledger-primary font-semibold') : 'text-ledger-primary'}`}>
-              GMP: {ipo.gmp || 'N/A'}
+            <span className="block mt-0.5">
+              GMP:{' '}
+              <span 
+                className={`font-semibold ${
+                  gmpVal !== null && gmpVal > 0 
+                    ? 'text-ledger-green' 
+                    : gmpVal !== null && gmpVal < 0 
+                      ? 'text-red-400' 
+                      : 'text-white'
+                }`}
+              >
+                {ipo.gmp || 'N/A'}
+              </span>
             </span>
           </div>
           <div className="text-right">
