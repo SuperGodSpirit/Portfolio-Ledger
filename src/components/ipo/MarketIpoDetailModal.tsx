@@ -97,9 +97,22 @@ const MarketIpoDetailModal = ({ ipo, isOpen, onClose, canApply, basePath }: Mark
           </div>
           <div>
             <span className="block text-xs text-ledger-muted">Est. Listing Price</span>
-            <span className="font-medium text-white">{estListing}<span className="text-xs opacity-70">{percentage}</span></span>
+            <span className="font-medium text-white">
+              {estListing}
+              {percentage && (
+                <span className={`text-xs ml-1 ${gmpVal !== null && gmpVal > 0 ? 'text-ledger-green' : gmpVal !== null && gmpVal < 0 ? 'text-red-400' : 'text-ledger-muted'}`}>
+                  {percentage}
+                </span>
+              )}
+            </span>
           </div>
-          <div></div>
+          <div>
+            <span className="block text-xs text-ledger-muted">Lot Size / Min Investment</span>
+            <span className="font-medium text-white">
+              {ipo.lotSize ? `${ipo.lotSize} Shares` : 'N/A'} 
+              {ipo.minInvestment && <span className="text-xs opacity-70 ml-1">({ipo.minInvestment.startsWith('₹') ? ipo.minInvestment : `₹${ipo.minInvestment}`})</span>}
+            </span>
+          </div>
           <div>
             <span className="block text-xs text-ledger-muted">Open Date</span>
             <span className="font-medium text-white">{ipo.openDate || 'N/A'}</span>

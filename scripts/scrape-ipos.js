@@ -98,7 +98,45 @@ async function scrapeIPOWatch() {
       });
     });
 
-    console.log(`Scraped ${ipos.length} IPOs from IPOWatch.`);
+    console.log(`Scraped ${ipos.length} IPOs from IPOWatch main page.`);
+    
+    // Fetch individual lot size for active/upcoming ones
+    for (let i = 0; i < ipos.length; i++) {
+      const ipo = ipos[i];
+      if ((ipo.status === 'active' || ipo.status === 'upcoming') && ipo.sourceLink && ipo.sourceLink.startsWith('http')) {
+        try {
+          console.log(`Fetching details for ${ipo.name}...`);
+          const r = await fetch(ipo.sourceLink, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } });
+          const t = await r.text();
+          const _$ = cheerio.load(t);
+          
+          let lotSize = null;
+          let minInvestment = null;
+          
+          _$('table').each((idx, table) => {
+            if (_$(table).text().includes('Lot Size') && !lotSize) {
+              _$(table).find('tr').each((j, tr) => {
+                const rowText = _$(tr).text().toLowerCase();
+                if (rowText.includes('retail') && rowText.includes('minimum')) {
+                  const cols = _$(tr).find('td, th').map((k, td) => _$(td).text().trim()).get();
+                  if (cols.length >= 4) {
+                    lotSize = cols[2];
+                    minInvestment = cols[3];
+                  }
+                }
+              });
+            }
+          });
+          
+          ipo.lotSize = lotSize;
+          ipo.minInvestment = minInvestment;
+          // small delay to avoid rate limiting
+          await new Promise(res => setTimeout(res, 500));
+        } catch(e) {
+          console.error("Failed to fetch details for", ipo.name, e.message);
+        }
+      }
+    }
   } catch (error) {
     console.error("Error scraping IPOWatch:", error);
     process.exit(1);

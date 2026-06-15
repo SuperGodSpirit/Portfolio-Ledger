@@ -4,7 +4,8 @@ export type MarketIpo = {
   id: string; // The link or a unique slug
   name: string;
   priceBand: string;
-  lotSize: number | null;
+  lotSize: string | null;
+  minInvestment?: string | null;
   openDate: string | null;
   closeDate: string | null;
   listingDate: string | null;
