@@ -96,7 +96,7 @@ const MarketIpoDetailModal = ({ ipo, isOpen, onClose, canApply, basePath }: Mark
           <div>
             <span className="block text-xs text-ledger-muted" title="Grey Market Premium">{profitLabel}</span>
             <span className={`font-medium ${gmpVal !== null && gmpVal > 0 ? 'text-ledger-green' : gmpVal !== null && gmpVal < 0 ? 'text-red-400' : 'text-white'}`}>
-              {ipo.gmp !== 'N/A' && ipo.gmp !== '-' ? `₹${ipo.gmp.replace(/[^0-9.-]/g, '')}` : 'N/A'}
+              {ipo.gmp && ipo.gmp !== 'N/A' && ipo.gmp !== '-' ? `₹${ipo.gmp.replace(/[^0-9.-]/g, '')}` : 'N/A'}
             </span>
           </div>
           <div>

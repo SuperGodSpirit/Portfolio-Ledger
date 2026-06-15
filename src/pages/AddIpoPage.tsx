@@ -8,7 +8,7 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import { createIpo } from "../services/ipoService";
 import { getPortfolios } from "../services/portfolioService";
 import type { IpoFormValues } from "../types/ipo";
-import type { Portfolio } from "../types/portfolio";
+import type { Portfolio, PortfolioId } from "../types/portfolio";
 
 type AddIpoPageProps = {
   basePath: "/owner" | "/manager";
