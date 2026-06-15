@@ -1,13 +1,11 @@
 const cheerio = require('cheerio');
 const admin = require('firebase-admin');
 
-// We use GitHub Actions secrets to set the FIREBASE_SERVICE_ACCOUNT variable
-// It should be a base64 encoded JSON or stringified JSON
 const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT;
 
 if (!serviceAccountKey) {
   console.error("FIREBASE_SERVICE_ACCOUNT is not set. Exiting.");
-  process.exit(1); // Exit with error so GitHub action fails and notifies owner
+  process.exit(1); 
 }
 
 let serviceAccount;
@@ -18,7 +16,6 @@ try {
   process.exit(1);
 }
 
-// Initialize Firebase Admin
 if (admin.apps.length === 0) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -27,111 +24,82 @@ if (admin.apps.length === 0) {
 
 const db = admin.firestore();
 
-async function scrapeChittorgarh() {
-  console.log("Fetching Chittorgarh IPO data...");
+async function scrapeIPOWatch() {
+  console.log("Fetching IPOWatch GMP data...");
   const ipos = [];
 
   try {
-    // Chittorgarh GMP page usually has all the consolidated info including dates, price and GMP
-    // https://www.chittorgarh.com/report/ipo-gmp-grey-market-premium/248/
-    // Let's scrape the main IPO list instead as instructed by subagent, 
-    // and fallback to NA for GMP if we can't find it easily without a second request to keep it simple.
-    
-    const response = await fetch('https://www.chittorgarh.com/report/mainboard-ipo-list-in-india-bse-nse/82/');
+    const response = await fetch('https://ipowatch.in/ipo-grey-market-premium-latest-ipo-gmp/', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)'
+      }
+    });
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    $('table.table tbody tr').each((index, element) => {
+    // Skip the first row as it's the header
+    const rows = $('table tbody tr').slice(1);
+    
+    rows.each((index, element) => {
       const $row = $(element);
+      const tds = $row.find('td');
       
-      const name = $row.find('td[data-label="Company"]').text().trim();
-      if (!name) return; // Skip empty rows
+      if (tds.length < 8) return;
 
-      const openDate = $row.find('td[data-label="Opening Date"]').text().trim();
-      const closeDate = $row.find('td[data-label="Closing Date"]').text().trim();
-      const listingDate = $row.find('td[data-label="Listing Date"]').text().trim();
-      const issuePrice = $row.find('td[data-label="Issue Price (Rs.)"]').text().trim();
-      const issuerLink = $row.find('td[data-label="Company"] a').attr('href');
+      const nameAnchor = $(tds[0]).find('a');
+      const name = nameAnchor.text().trim() || $(tds[0]).text().trim();
+      const issuerLink = nameAnchor.attr('href') || null;
       
-      // Basic status parsing based on dates
-      let status = 'upcoming';
-      const now = new Date();
-      if (closeDate) {
-        const closeDateObj = new Date(closeDate);
-        const openDateObj = new Date(openDate);
-        if (!isNaN(closeDateObj) && !isNaN(openDateObj)) {
-            if (now > closeDateObj) {
-                status = 'closed';
-            } else if (now >= openDateObj && now <= closeDateObj) {
-                status = 'active';
-            }
-        }
-      }
-      
-      ipos.push({
-        id: name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase(),
-        name,
-        priceBand: issuePrice || 'N/A',
-        lotSize: null, // Hard to parse from list, requires details page
-        openDate: openDate || null,
-        closeDate: closeDate || null,
-        listingDate: listingDate || null,
-        gmp: 'N/A', // Not available on this specific page as per subagent
-        status,
-        sourceLink: issuerLink || 'https://www.chittorgarh.com',
-      });
-    });
+      const gmp = $(tds[1]).text().trim();
+      const priceBand = $(tds[3]).text().trim();
+      const dateString = $(tds[5]).text().trim(); // e.g. "23-25 June"
+      const type = $(tds[6]).text().trim().toLowerCase(); // "mainboard" or "sme"
+      const rawStatus = $(tds[7]).text().trim().toLowerCase();
 
-    console.log(`Scraped ${ipos.length} IPOs from Mainboard list.`);
-
-    // SME IPOs
-    const smeResponse = await fetch('https://www.chittorgarh.com/report/sme-ipo-list-in-india-bse-nse/83/');
-    const smeHtml = await smeResponse.text();
-    const $sme = cheerio.load(smeHtml);
-
-    $sme('table.table tbody tr').each((index, element) => {
-      const $row = $sme(element);
-      const name = $row.find('td[data-label="Company"]').text().trim();
       if (!name) return;
+      if (name.toLowerCase() === 'ipo name') return;
 
-      const openDate = $row.find('td[data-label="Opening Date"]').text().trim();
-      const closeDate = $row.find('td[data-label="Closing Date"]').text().trim();
-      const listingDate = $row.find('td[data-label="Listing Date"]').text().trim();
-      const issuePrice = $row.find('td[data-label="Issue Price (Rs.)"]').text().trim();
-      const issuerLink = $row.find('td[data-label="Company"] a').attr('href');
-
-       let status = 'upcoming';
-      const now = new Date();
-      if (closeDate) {
-        const closeDateObj = new Date(closeDate);
-        const openDateObj = new Date(openDate);
-        if (!isNaN(closeDateObj) && !isNaN(openDateObj)) {
-            if (now > closeDateObj) {
-                status = 'closed';
-            } else if (now >= openDateObj && now <= closeDateObj) {
-                status = 'active';
-            }
-        }
+      let status = 'upcoming';
+      if (rawStatus.includes('open')) {
+        status = 'active';
+      } else if (rawStatus.includes('close')) {
+        status = 'closed';
+      } else if (rawStatus.includes('list')) {
+        status = 'listed';
       }
 
+      // Simple date splitting "23-25 June" -> "23 June" and "25 June"
+      let openDate = dateString;
+      let closeDate = dateString;
+      const dateMatch = dateString.match(/(\d+)-(\d+)\s+([a-zA-Z]+)/);
+      if (dateMatch) {
+        openDate = `${dateMatch[1]} ${dateMatch[3]}`;
+        closeDate = `${dateMatch[2]} ${dateMatch[3]}`;
+      } else if (dateString.includes('-')) {
+         const parts = dateString.split('-');
+         openDate = parts[0].trim();
+         closeDate = parts[1].trim();
+      }
+
+      const idSuffix = type.includes('sme') ? '-sme' : '';
+
       ipos.push({
-        id: name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase() + '-sme',
-        name: name + ' (SME)',
-        priceBand: issuePrice || 'N/A',
+        id: name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase() + idSuffix,
+        name: type.includes('sme') ? name + ' (SME)' : name,
+        priceBand: priceBand || 'N/A',
         lotSize: null,
         openDate: openDate || null,
         closeDate: closeDate || null,
-        listingDate: listingDate || null,
-        gmp: 'N/A',
+        listingDate: null, // Not easily parsed here
+        gmp: gmp || 'N/A',
         status,
-        sourceLink: issuerLink || 'https://www.chittorgarh.com',
+        sourceLink: issuerLink || 'https://ipowatch.in',
       });
     });
-    
-    console.log(`Total scraped after SME: ${ipos.length} IPOs.`);
 
+    console.log(`Scraped ${ipos.length} IPOs from IPOWatch.`);
   } catch (error) {
-    console.error("Error scraping Chittorgarh:", error);
+    console.error("Error scraping IPOWatch:", error);
     process.exit(1);
   }
 
@@ -143,9 +111,6 @@ async function updateFirestore(ipos) {
   const batch = db.batch();
   const collectionRef = db.collection('market_ipos');
   
-  // To avoid keeping old stale IPOs forever, we could delete old closed ones.
-  // But for now, just insert/update the ones we fetched.
-  
   for (const ipo of ipos) {
     const docRef = collectionRef.doc(ipo.id);
     batch.set(docRef, {
@@ -154,7 +119,6 @@ async function updateFirestore(ipos) {
     }, { merge: true });
   }
   
-  // Also save fetch metadata
   const metaRef = db.collection('market_ipos_meta').doc('metadata');
   batch.set(metaRef, {
     lastFetchedAt: new Date().toISOString(),
@@ -171,7 +135,7 @@ async function updateFirestore(ipos) {
 }
 
 async function run() {
-  const ipos = await scrapeChittorgarh();
+  const ipos = await scrapeIPOWatch();
   if (ipos.length > 0) {
     await updateFirestore(ipos);
   } else {
