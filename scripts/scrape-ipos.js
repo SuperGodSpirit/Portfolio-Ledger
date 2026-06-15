@@ -118,6 +118,7 @@ async function scrapeIPOWatch() {
           
           let lotSize = null;
           let minInvestment = null;
+          let listingDate = null;
           
           _$('table').each((idx, table) => {
             if (_$(table).text().includes('Lot Size') && !lotSize) {
@@ -133,9 +134,22 @@ async function scrapeIPOWatch() {
               });
             }
           });
+
+          _$('table').each((idx, table) => {
+            _$(table).find('tr').each((j, tr) => {
+              const rowText = _$(tr).text().toLowerCase();
+              if (rowText.includes('listing date')) {
+                const cols = _$(tr).find('td, th').map((k, td) => _$(td).text().trim()).get();
+                if (cols.length >= 2) {
+                  listingDate = cols[1];
+                }
+              }
+            });
+          });
           
           ipo.lotSize = lotSize;
           ipo.minInvestment = minInvestment;
+          ipo.listingDate = listingDate;
           // small delay to avoid rate limiting
           await new Promise(res => setTimeout(res, 500));
         } catch(e) {
