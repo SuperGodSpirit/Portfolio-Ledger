@@ -20,8 +20,12 @@ const Modal = ({ title, isOpen, onClose, children }: ModalProps) => {
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
+      onClick={onClose}
     >
-      <div className="w-full max-w-md rounded border border-ledger-line bg-ledger-panel p-6 shadow-ledger">
+      <div 
+        className="w-full max-w-md rounded border border-ledger-line bg-ledger-panel p-6 shadow-ledger relative"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mb-5 flex items-start justify-between gap-4">
           <h2 id="modal-title" className="text-lg font-semibold text-white">
             {title}
@@ -29,11 +33,11 @@ const Modal = ({ title, isOpen, onClose, children }: ModalProps) => {
           <Button
             type="button"
             variant="ghost"
-            className="min-h-9 w-9 px-0"
+            className="min-h-9 w-9 px-0 text-white hover:text-red-400 absolute top-4 right-4"
             onClick={onClose}
             aria-label="Close modal"
           >
-            <X className="h-4 w-4" aria-hidden="true" />
+            <X className="h-6 w-6" aria-hidden="true" />
           </Button>
         </div>
         {children}

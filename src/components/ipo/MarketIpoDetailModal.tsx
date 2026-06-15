@@ -5,7 +5,7 @@ import Button from "../ui/Button";
 import type { MarketIpo } from "../../types/market-ipo";
 import { getPortfolios } from "../../services/portfolioService";
 import type { Portfolio } from "../../types/portfolio";
-import Spinner from "../ui/Spinner";
+import { Loader2 } from "lucide-react";
 
 type MarketIpoDetailModalProps = {
   ipo: MarketIpo | null;
@@ -69,7 +69,7 @@ const MarketIpoDetailModal = ({ ipo, isOpen, onClose, canApply, basePath }: Mark
             <span className="font-medium text-white">{ipo.priceBand}</span>
           </div>
           <div>
-            <span className="block text-xs text-ledger-muted">GMP</span>
+            <span className="block text-xs text-ledger-muted" title="Grey Market Premium">GMP <span className="text-[10px] opacity-70">(Grey Market Premium)</span></span>
             <span className="font-medium text-white">{ipo.gmp || 'N/A'}</span>
           </div>
           <div>
@@ -99,11 +99,13 @@ const MarketIpoDetailModal = ({ ipo, isOpen, onClose, canApply, basePath }: Mark
           </div>
         )}
 
-        {canApply && (
+        {canApply && ipo.status === 'active' && (
           <div className="mt-6 space-y-3 rounded bg-ledger-bg p-3 border border-ledger-line">
             <h4 className="font-medium text-white">Apply to Portfolio</h4>
             {loading ? (
-              <div className="flex justify-center p-2"><Spinner /></div>
+              <div className="flex justify-center p-4">
+                <Loader2 className="h-6 w-6 animate-spin text-ledger-primary" />
+              </div>
             ) : (
               <>
                 <select

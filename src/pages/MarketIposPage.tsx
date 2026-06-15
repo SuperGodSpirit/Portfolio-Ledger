@@ -29,7 +29,8 @@ const MarketIposPage = ({ basePath, canApply = true }: { basePath: string, canAp
     fetchData();
   }, []);
 
-  const activeIpos = ipos.filter(i => i.status === 'upcoming' || i.status === 'active');
+  const activeIpos = ipos.filter(i => i.status === 'active');
+  const upcomingIpos = ipos.filter(i => i.status === 'upcoming');
   const recentIpos = ipos.filter(i => i.status === 'closed' || i.status === 'listed')
                           .sort((a, b) => new Date(b.closeDate || 0).getTime() - new Date(a.closeDate || 0).getTime())
                           .slice(0, 5);
@@ -57,7 +58,7 @@ const MarketIposPage = ({ basePath, canApply = true }: { basePath: string, canAp
     >
       <div className="flex items-start justify-between">
         <h3 className="font-semibold text-white">{ipo.name}</h3>
-        <span className="text-sm font-medium text-white">₹{ipo.priceBand}</span>
+        <span className="text-sm font-medium text-white">{ipo.priceBand}</span>
       </div>
       <div className="mt-3 flex items-center justify-between text-xs text-ledger-muted">
         <div>
@@ -85,9 +86,9 @@ const MarketIposPage = ({ basePath, canApply = true }: { basePath: string, canAp
       </div>
 
       <div>
-        <h2 className="mb-4 text-lg font-medium text-white border-b border-ledger-line pb-2">Active & Upcoming</h2>
+        <h2 className="mb-4 text-xl font-bold text-white border-b border-ledger-line pb-2 text-center">Active IPOs</h2>
         {activeIpos.length === 0 ? (
-          <p className="text-sm text-ledger-muted">No active or upcoming IPOs found.</p>
+          <p className="text-sm text-ledger-muted text-center">No active IPOs found.</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {activeIpos.map(ipo => <IpoCard key={ipo.id} ipo={ipo} />)}
@@ -96,9 +97,20 @@ const MarketIposPage = ({ basePath, canApply = true }: { basePath: string, canAp
       </div>
 
       <div>
-        <h2 className="mb-4 text-lg font-medium text-white border-b border-ledger-line pb-2">Recently Closed (Last 5)</h2>
+        <h2 className="mb-4 text-xl font-bold text-white border-b border-ledger-line pb-2 text-center">Upcoming IPOs</h2>
+        {upcomingIpos.length === 0 ? (
+          <p className="text-sm text-ledger-muted text-center">No upcoming IPOs found.</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {upcomingIpos.map(ipo => <IpoCard key={ipo.id} ipo={ipo} />)}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <h2 className="mb-4 text-xl font-bold text-white border-b border-ledger-line pb-2 text-center">Recently Closed (Last 5)</h2>
         {recentIpos.length === 0 ? (
-          <p className="text-sm text-ledger-muted">No recent IPOs found.</p>
+          <p className="text-sm text-ledger-muted text-center">No recent IPOs found.</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {recentIpos.map(ipo => <IpoCard key={ipo.id} ipo={ipo} />)}
