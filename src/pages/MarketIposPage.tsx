@@ -128,15 +128,15 @@ const MarketIposPage = ({ basePath, canApply = true }: { basePath: string, canAp
             </div>
           )}
         </div>
-
-        <MarketIpoDetailModal 
-          isOpen={!!selectedIpo}
-          onClose={() => setSelectedIpo(null)}
-          ipo={selectedIpo}
-          canApply={canApply}
-          basePath={basePath}
-        />
       </div>
+
+      <MarketIpoDetailModal 
+        isOpen={!!selectedIpo}
+        onClose={() => setSelectedIpo(null)}
+        ipo={selectedIpo}
+        canApply={canApply}
+        basePath={basePath}
+      />
     </DashboardLayout>
   );
 };
