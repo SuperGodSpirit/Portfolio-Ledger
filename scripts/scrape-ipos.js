@@ -1,5 +1,6 @@
 const cheerio = require('cheerio');
-const admin = require('firebase-admin');
+const { initializeApp, getApps, cert } = require('firebase-admin/app');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT;
 
@@ -16,13 +17,13 @@ try {
   process.exit(1);
 }
 
-if (admin.apps.length === 0) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
+if (getApps().length === 0) {
+  initializeApp({
+    credential: cert(serviceAccount)
   });
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 async function scrapeIPOWatch() {
   console.log("Fetching IPOWatch GMP data...");
@@ -115,7 +116,7 @@ async function updateFirestore(ipos) {
     const docRef = collectionRef.doc(ipo.id);
     batch.set(docRef, {
       ...ipo,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      updatedAt: FieldValue.serverTimestamp()
     }, { merge: true });
   }
   
