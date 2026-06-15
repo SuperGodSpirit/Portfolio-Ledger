@@ -60,28 +60,38 @@ const MarketIposPage = ({ basePath, canApply = true }: { basePath: string, canAp
     });
   };
 
-  const IpoCard = ({ ipo }: { ipo: MarketIpo }) => (
-    <div 
-      className="cursor-pointer rounded border border-ledger-line bg-ledger-panel p-4 transition-all hover:border-ledger-primary hover:shadow-lg"
-      onClick={() => setSelectedIpo(ipo)}
-    >
-      <div className="flex items-start justify-between">
-        <h3 className="font-semibold text-white">{ipo.name}</h3>
-        <span className="text-sm font-medium text-white">{ipo.priceBand}</span>
-      </div>
-      <div className="mt-3 flex items-center justify-between text-xs text-ledger-muted">
-        <div>
-          <span className="block">Close: {ipo.closeDate || 'N/A'}</span>
-          <span className="block text-ledger-primary">GMP: {ipo.gmp || 'N/A'}</span>
+  const IpoCard = ({ ipo }: { ipo: MarketIpo }) => {
+    const isGmpPositive = ipo.gmp && ipo.gmp !== 'N/A' && ipo.gmp !== '-' && !ipo.gmp.includes('-');
+    return (
+      <div 
+        className="cursor-pointer rounded border border-ledger-line bg-ledger-panel p-4 transition-all hover:border-ledger-primary hover:shadow-lg"
+        onClick={() => setSelectedIpo(ipo)}
+      >
+        <div className="flex items-start justify-between">
+          <h3 className="font-semibold text-white pr-2">{ipo.name}</h3>
+          <div className="text-right">
+            <span className="block text-sm font-medium text-white">{ipo.priceBand !== 'N/A' && ipo.priceBand !== '-' ? `₹${ipo.priceBand.replace(/[^0-9.-]/g, '')}` : 'N/A'}</span>
+            <span className="block text-xs text-ledger-muted mt-0.5">
+              Min: <span className="text-white">{ipo.minInvestment ? (ipo.minInvestment.startsWith('₹') ? ipo.minInvestment : `₹${ipo.minInvestment}`) : 'N/A'}</span>
+            </span>
+          </div>
         </div>
-        <div className="text-right">
-          <span className="inline-block rounded bg-ledger-bg px-2 py-1 uppercase text-[10px] tracking-wider border border-ledger-line">
-            {ipo.status}
-          </span>
+        <div className="mt-3 flex items-center justify-between text-xs text-ledger-muted">
+          <div>
+            <span className="block">Close: {ipo.closeDate || 'N/A'}</span>
+            <span className={`block mt-0.5 ${ipo.status === 'active' ? (isGmpPositive ? 'text-ledger-green font-semibold' : 'text-ledger-primary font-semibold') : 'text-ledger-primary'}`}>
+              GMP: {ipo.gmp || 'N/A'}
+            </span>
+          </div>
+          <div className="text-right">
+            <span className="inline-block rounded bg-[#0a0d11] px-2 py-1 uppercase text-[10px] tracking-wider border border-ledger-line text-[#8793a3]">
+              {ipo.status}
+            </span>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <DashboardLayout 
