@@ -89,9 +89,10 @@ async function scrapeIPOWatch() {
         name: type.includes('sme') ? name + ' (SME)' : name,
         priceBand: priceBand || 'N/A',
         lotSize: null,
+        minInvestment: null,
         openDate: openDate || null,
         closeDate: closeDate || null,
-        listingDate: null, // Not easily parsed here
+        listingDate: null,
         gmp: gmp || 'N/A',
         status,
         sourceLink: issuerLink || 'https://ipowatch.in',
