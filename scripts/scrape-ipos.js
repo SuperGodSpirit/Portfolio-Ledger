@@ -100,10 +100,15 @@ async function scrapeIPOWatch() {
 
     console.log(`Scraped ${ipos.length} IPOs from IPOWatch main page.`);
     
-    // Fetch individual lot size for active/upcoming ones
+    // Fetch individual lot size for active/upcoming ones and recent closed ones
+    let closedCount = 0;
     for (let i = 0; i < ipos.length; i++) {
       const ipo = ipos[i];
-      if ((ipo.status === 'active' || ipo.status === 'upcoming') && ipo.sourceLink && ipo.sourceLink.startsWith('http')) {
+      if (ipo.status === 'closed') closedCount++;
+      
+      const shouldFetch = ipo.status === 'active' || ipo.status === 'upcoming' || (ipo.status === 'closed' && closedCount <= 10);
+      
+      if (shouldFetch && ipo.sourceLink && ipo.sourceLink.startsWith('http')) {
         try {
           console.log(`Fetching details for ${ipo.name}...`);
           const r = await fetch(ipo.sourceLink, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } });

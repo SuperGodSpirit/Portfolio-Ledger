@@ -74,6 +74,10 @@ const MarketIpoDetailModal = ({ ipo, isOpen, onClose, canApply, basePath }: Mark
     percentage = ` (${gmpVal >= 0 ? '+' : ''}${pct}%)`;
   }
 
+  const isEstimated = ipo.status === 'active' || ipo.status === 'upcoming';
+  const profitLabel = isEstimated ? "Est. Profit / Share" : "Profit / Share";
+  const listingLabel = isEstimated ? "Est. Listing Price" : "Listing Price";
+
   return (
     <Modal title="IPO Details" isOpen={isOpen} onClose={onClose}>
       <div className="space-y-4 text-sm text-ledger-text">
@@ -90,13 +94,13 @@ const MarketIpoDetailModal = ({ ipo, isOpen, onClose, canApply, basePath }: Mark
             <span className="font-medium text-white">{ipo.priceBand !== 'N/A' && ipo.priceBand !== '-' ? `₹${ipo.priceBand.replace(/[^0-9.-]/g, '')}` : 'N/A'}</span>
           </div>
           <div>
-            <span className="block text-xs text-ledger-muted" title="Grey Market Premium">Est. Profit / Share</span>
+            <span className="block text-xs text-ledger-muted" title="Grey Market Premium">{profitLabel}</span>
             <span className={`font-medium ${gmpVal !== null && gmpVal > 0 ? 'text-ledger-green' : gmpVal !== null && gmpVal < 0 ? 'text-red-400' : 'text-white'}`}>
               {ipo.gmp !== 'N/A' && ipo.gmp !== '-' ? `₹${ipo.gmp.replace(/[^0-9.-]/g, '')}` : 'N/A'}
             </span>
           </div>
           <div>
-            <span className="block text-xs text-ledger-muted">Est. Listing Price</span>
+            <span className="block text-xs text-ledger-muted">{listingLabel}</span>
             <span className="font-medium text-white">
               {estListing}
               {percentage && (
