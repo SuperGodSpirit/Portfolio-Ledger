@@ -114,5 +114,13 @@ service cloud.firestore {
       );
       allow update, delete: if false; 
     }
+
+    // ==========================================
+    // NOTIFICATIONS COLLECTION
+    // ==========================================
+    match /notifications/{notificationId} {
+      allow read: if isActiveUser() && isOwnerOrManager();
+      allow write: if false; // Only written by Netlify Function backend
+    }
   }
 }

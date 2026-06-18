@@ -1,23 +1,52 @@
+const cheerio = require('cheerio');
+
 async function test() {
   try {
-    const r = await fetch('https://ipowatch.in/ipo-grey-market-premium-latest-ipo-gmp/', {
+    const url = 'https://ipowatch.in/horizon-reclaim-ipo/';
+    console.log('Fetching', url);
+    const r = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       }
     });
     const t = await r.text();
-    const cheerio = require('cheerio');
     const $ = cheerio.load(t);
-    $('table tbody tr').slice(1).each((i, el) => {
-      const row = $(el);
-      const name = row.find('td').eq(0).text().trim();
-      const link = row.find('td').eq(0).find('a').attr('href');
-      if (name.includes('Utkal')) {
-        console.log(`Utkal Link:`, link);
+    
+    let lotSize = null;
+    let minInvestment = null;
+    let listingDate = null;
+    
+    $('table').each((i, table) => {
+      if ($(table).text().includes('Lot Size') && !lotSize) {
+        $(table).find('tr').each((j, tr) => {
+          const rowText = $(tr).text().toLowerCase();
+          if (rowText.includes('retail') && rowText.includes('minimum')) {
+            const cols = $(tr).find('td, th').map((k, td) => $(td).text().trim()).get();
+            console.log('Cols:', cols);
+            if (cols.length >= 4) {
+              lotSize = cols[2];
+              minInvestment = cols[3];
+            }
+          }
+        });
       }
     });
-  } catch(e) {
-    console.error('Error fetching:', e);
+
+    $('table').each((i, table) => {
+      $(table).find('tr').each((j, tr) => {
+        const rowText = $(tr).text().toLowerCase();
+        if (rowText.includes('listing date')) {
+          const cols = $(tr).find('td, th').map((k, td) => $(td).text().trim()).get();
+          if (cols.length >= 2) {
+            listingDate = cols[1];
+          }
+        }
+      });
+    });
+    
+    console.log({ lotSize, minInvestment, listingDate });
+  } catch (e) {
+    console.error(e);
   }
 }
 test();

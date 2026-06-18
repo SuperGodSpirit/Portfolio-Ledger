@@ -3,12 +3,21 @@ import type { Timestamp } from "firebase/firestore";
 export type UserRole = "owner" | "manager" | "viewer" | "guest";
 export type UserStatus = "pending" | "active" | "deactivated";
 
+export interface NotificationPreferences {
+  enabled: boolean;
+  ipoAlerts: boolean;
+  settlementAlerts: boolean;
+  adminAlerts: boolean;
+}
+
 export type LedgerUser = {
   uid: string;
   name: string;
   role: UserRole;
   status: UserStatus;
   portfolios: string[];
+  notificationTokens?: string[];
+  notifications?: NotificationPreferences;
   // Legacy fields for migration fallback (optional)
   active?: boolean;
   portfolioAlpha?: boolean;

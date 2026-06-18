@@ -1,4 +1,4 @@
-import { LogOut, WalletCards, LayoutDashboard, BarChart3, History, ArrowRightLeft, Shield, Menu, PieChart, Download } from "lucide-react";
+import { LogOut, WalletCards, LayoutDashboard, BarChart3, History, ArrowRightLeft, Shield, Menu, PieChart, Download, Settings } from "lucide-react";
 import { useState, useRef, useEffect, type ReactNode } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -49,6 +49,7 @@ const DashboardLayout = ({
     { name: "Analytics", to: `${basePath}/analytics`, icon: BarChart3 },
     { name: "History", to: `${basePath}/ipos`, icon: History },
     { name: "Settlements", to: `${basePath}/settlements`, icon: ArrowRightLeft },
+    { name: "Settings", to: `${basePath}/settings`, icon: Settings },
   ];
 
   if (ledgerUser?.role === "owner" || ledgerUser?.role === "manager") {

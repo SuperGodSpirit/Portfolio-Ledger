@@ -1,4 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import { setupForegroundMessageListener } from "./services/notificationService";
 import AddIpoPage from "./pages/AddIpoPage";
 import EditIpoPage from "./pages/EditIpoPage";
 import IpoDetailViewPage from "./pages/IpoDetailViewPage";
@@ -18,12 +20,36 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import RoleRedirect from "./routes/RoleRedirect";
 import ReportsExportPage from "./pages/ReportsExportPage";
 import MarketIposPage from "./pages/MarketIposPage";
+import SettingsPage from "./pages/SettingsPage";
 
 import PendingAccess from "./pages/PendingAccess";
 import DeactivatedAccess from "./pages/DeactivatedAccess";
 
-const App = () => (
-  <Routes>
+const App = () => {
+  useEffect(() => {
+    let unsubscribe: () => void;
+    setupForegroundMessageListener((payload) => {
+      console.log("Foreground message received:", payload);
+      // In a real app, you might want to use a toast library instead of alert
+      if (payload?.notification) {
+        // Just log for now to avoid annoying alerts, or use a custom toast
+        // but since we don't have a toast component ready, we'll just log it.
+        // The browser might also show it if configured.
+        console.info(`🔔 ${payload.notification.title}: ${payload.notification.body}`);
+      }
+    }).then((unsub) => {
+      if (typeof unsub === "function") {
+        unsubscribe = unsub;
+      }
+    });
+    
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  return (
+    <Routes>
     <Route path="/" element={<RoleRedirect />} />
     <Route path="/login" element={<LoginPage />} />
     <Route path="/pending" element={<PendingAccess />} />
@@ -43,6 +69,7 @@ const App = () => (
       <Route path="/owner/audit" element={<AuditLogPage basePath="/owner" />} />
       <Route path="/owner/admin" element={<AdminCenter />} />
       <Route path="/owner/reports" element={<ReportsExportPage basePath="/owner" />} />
+      <Route path="/owner/settings" element={<SettingsPage basePath="/owner" />} />
     </Route>
 
     <Route element={<ProtectedRoute allowedRoles={["manager"]} />}>
@@ -57,6 +84,7 @@ const App = () => (
       <Route path="/manager/audit" element={<AuditLogPage basePath="/manager" />} />
       <Route path="/manager/admin" element={<AdminCenter />} />
       <Route path="/manager/reports" element={<ReportsExportPage basePath="/manager" />} />
+      <Route path="/manager/settings" element={<SettingsPage basePath="/manager" />} />
     </Route>
 
     <Route element={<ProtectedRoute allowedRoles={["viewer"]} />}>
@@ -66,11 +94,13 @@ const App = () => (
       <Route path="/viewer/ipos/:ipoId" element={<IpoDetailViewPage basePath="/viewer" />} />
       <Route path="/viewer/settlements" element={<SettlementCenterPage basePath="/viewer" />} />
       <Route path="/viewer/analytics" element={<AnalyticsPage basePath="/viewer" />} />
+      <Route path="/viewer/settings" element={<SettingsPage basePath="/viewer" />} />
     </Route>
 
     <Route path="/dashboard" element={<Navigate to="/" replace />} />
     <Route path="*" element={<NotFoundPage />} />
   </Routes>
-);
+  );
+};
 
 export default App;

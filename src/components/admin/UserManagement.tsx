@@ -3,6 +3,7 @@ import { collection, getDocs, doc, updateDoc, serverTimestamp } from "firebase/f
 import { db } from "../../config/firebase";
 import type { LedgerUser } from "../../types/user";
 import type { Portfolio } from "../../types/portfolio";
+import { notificationSender } from "../../services/notificationSender";
 import { getPortfolios } from "../../services/portfolioService";
 import Spinner from "../ui/Spinner";
 import { ShieldAlert, UserX, CheckCircle, Clock } from "lucide-react";
@@ -56,11 +57,23 @@ const UserManagement = () => {
 
     const handleUpdateUser = async (uid: string, updates: Partial<LedgerUser>) => {
         try {
+            const previousUser = users.find(u => u.uid === uid);
+            
             await updateDoc(doc(db, "users", uid), {
                 ...updates,
                 updatedAt: serverTimestamp()
             });
             setUsers(prev => prev.map(u => u.uid === uid ? { ...u, ...updates } : u));
+
+            // Automated Notification for account approval
+            if (updates.status === "active" && previousUser?.status === "pending") {
+                notificationSender.sendToUsers(
+                    [uid], 
+                    "Account Approved", 
+                    "Your account has been approved. You can now access the platform.",
+                    "adminAlerts"
+                ).catch(e => console.error("Failed to notify user of approval", e));
+            }
         } catch (error) {
             console.error("Failed to update user:", error);
             alert("Failed to update user. Please try again.");

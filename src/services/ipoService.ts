@@ -15,6 +15,7 @@ import type { IpoFormValues, IpoRecord } from "../types/ipo";
 import type { PortfolioId } from "../types/portfolio";
 import type { LedgerUser } from "../types/user";
 import { createAuditLog } from "./auditService";
+import { notificationSender } from "./notificationSender";
 
 const mapIpoDocument = (ipoId: string, data: Partial<IpoRecord>): IpoRecord => ({
   id: ipoId,
@@ -63,6 +64,16 @@ export const createIpo = async (values: IpoFormValues, user: LedgerUser) => {
     description: `Created IPO: ${values.ipoName}`,
     portfolioId: values.portfolioId,
   });
+
+  // Automated Notification
+  notificationSender.sendToPortfolio(
+    [values.portfolioId],
+    "New IPO Available",
+    `${values.ipoName} is now open for applications.`,
+    "ipoAlerts"
+  ).catch(e => console.error("Failed to send IPO creation notification", e));
+
+  return docRef.id;
 };
 
 export const updateIpo = async (ipoId: string, values: IpoFormValues, user: LedgerUser) => {
@@ -165,6 +176,14 @@ export const updateSettlementStatus = async (
     description: `${status === "settled" ? "Marked settled" : "Reopened"} settlement: ${updatedFrom} pays ₹${updatedAmount} to ${updatedTo}`,
     portfolioId,
   });
+
+  // Automated Notification
+  notificationSender.sendToPortfolio(
+    [portfolioId],
+    `Settlement ${status === "settled" ? "Settled" : "Pending"}`,
+    `${updatedFrom} pays ₹${updatedAmount} to ${updatedTo}`,
+    "settlementAlerts"
+  ).catch(e => console.error("Failed to send settlement notification", e));
 };
 
 export const getIpoById = async (ipoId: string): Promise<IpoRecord | null> => {

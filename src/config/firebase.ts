@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getMessaging, isSupported } from "firebase/messaging";
 
 const requiredEnv = (key: keyof ImportMetaEnv) => {
   const value = import.meta.env[key];
@@ -12,7 +13,7 @@ const requiredEnv = (key: keyof ImportMetaEnv) => {
   return value;
 };
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: requiredEnv("VITE_FIREBASE_API_KEY"),
   authDomain: requiredEnv("VITE_FIREBASE_AUTH_DOMAIN"),
   projectId: requiredEnv("VITE_FIREBASE_PROJECT_ID"),
@@ -24,3 +25,12 @@ const firebaseConfig = {
 export const firebaseApp = initializeApp(firebaseConfig);
 export const auth = getAuth(firebaseApp);
 export const db = getFirestore(firebaseApp);
+
+// Initialize Firebase Cloud Messaging and get a reference to the service
+export const messaging = async () => {
+  const supported = await isSupported();
+  if (supported) {
+    return getMessaging(firebaseApp);
+  }
+  return null;
+};

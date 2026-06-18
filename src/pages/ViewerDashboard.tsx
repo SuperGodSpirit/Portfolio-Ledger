@@ -2,6 +2,7 @@ import { useState } from "react";
 import DashboardShell from "../components/dashboard/DashboardShell";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
+import NotificationPromptCard from "../components/dashboard/NotificationPromptCard";
 
 const ViewerDashboard = () => {
   const { ledgerUser } = useAuth();
@@ -34,6 +35,7 @@ const ViewerDashboard = () => {
 
   return (
     <DashboardLayout title="Dashboard" subtitle={subtitle} headerRight={headerRight} readOnly>
+      <NotificationPromptCard />
       <DashboardShell mode="viewer" basePath="/viewer" portfolioIdFilter={selectedPortfolio} readOnly />
     </DashboardLayout>
   );
