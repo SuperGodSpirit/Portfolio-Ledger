@@ -79,6 +79,7 @@ const DashboardLayout = ({
             </Link>
           </div>
           <div className="flex items-center gap-3">
+            {ledgerUser && <NotificationBell basePath={basePath} />}
             {ledgerUser && (
               <div className="relative z-50" ref={menuRef}>
                 <Button type="button" variant="secondary" onClick={() => setIsMenuOpen(!isMenuOpen)}>

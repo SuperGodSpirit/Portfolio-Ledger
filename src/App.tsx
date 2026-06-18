@@ -24,6 +24,7 @@ import SettingsPage from "./pages/SettingsPage";
 
 import PendingAccess from "./pages/PendingAccess";
 import DeactivatedAccess from "./pages/DeactivatedAccess";
+import NotificationsPage from "./pages/NotificationsPage";
 
 const App = () => {
   useEffect(() => {
@@ -70,6 +71,7 @@ const App = () => {
       <Route path="/owner/admin" element={<AdminCenter />} />
       <Route path="/owner/reports" element={<ReportsExportPage basePath="/owner" />} />
       <Route path="/owner/settings" element={<SettingsPage basePath="/owner" />} />
+      <Route path="/owner/notifications" element={<NotificationsPage basePath="/owner" />} />
     </Route>
 
     <Route element={<ProtectedRoute allowedRoles={["manager"]} />}>
@@ -85,6 +87,7 @@ const App = () => {
       <Route path="/manager/admin" element={<AdminCenter />} />
       <Route path="/manager/reports" element={<ReportsExportPage basePath="/manager" />} />
       <Route path="/manager/settings" element={<SettingsPage basePath="/manager" />} />
+      <Route path="/manager/notifications" element={<NotificationsPage basePath="/manager" />} />
     </Route>
 
     <Route element={<ProtectedRoute allowedRoles={["viewer"]} />}>
@@ -95,6 +98,7 @@ const App = () => {
       <Route path="/viewer/settlements" element={<SettlementCenterPage basePath="/viewer" />} />
       <Route path="/viewer/analytics" element={<AnalyticsPage basePath="/viewer" />} />
       <Route path="/viewer/settings" element={<SettingsPage basePath="/viewer" />} />
+      <Route path="/viewer/notifications" element={<NotificationsPage basePath="/viewer" />} />
     </Route>
 
     <Route path="/dashboard" element={<Navigate to="/" replace />} />
