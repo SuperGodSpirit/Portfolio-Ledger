@@ -1,20 +1,23 @@
 import { Handler } from "@netlify/functions";
-import * as admin from "firebase-admin";
+import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
+import { getMessaging } from "firebase-admin/messaging";
 
 let isInitialized = false;
 
 const initializeFirebase = () => {
-  if (!isInitialized && !admin.apps.length) {
+  if (!isInitialized && getApps().length === 0) {
     const projectId = process.env.FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
     const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
     if (!projectId || !clientEmail || !privateKey) {
       console.warn("Missing Firebase Admin environment variables.");
-      admin.initializeApp();
+      initializeApp();
     } else {
-      admin.initializeApp({
-        credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
+      initializeApp({
+        credential: cert({ projectId, clientEmail, privateKey }),
       });
     }
     isInitialized = true;
@@ -29,8 +32,9 @@ export const handler: Handler = async (event, context) => {
   try {
     // 0. Initialize Firebase inside the handler to prevent global scope crashes (502s)
     initializeFirebase();
-    const db = admin.firestore();
-    const messaging = admin.messaging();
+    const db = getFirestore();
+    const messaging = getMessaging();
+    const auth = getAuth();
 
     // 1. Verify Caller Authentication
     const authHeader = event.headers.authorization || event.headers.Authorization;
@@ -41,7 +45,7 @@ export const handler: Handler = async (event, context) => {
     const idToken = authHeader.split("Bearer ")[1];
     let decodedToken;
     try {
-      decodedToken = await admin.auth().verifyIdToken(idToken);
+      decodedToken = await auth.verifyIdToken(idToken);
     } catch (error) {
       return { statusCode: 401, body: JSON.stringify({ error: "Unauthorized: Invalid Token" }) };
     }
@@ -60,7 +64,7 @@ export const handler: Handler = async (event, context) => {
     const oneMinuteAgo = new Date(Date.now() - 60000);
     const recentSnapshot = await db.collection("notifications")
       .where("sentByUid", "==", callerUid)
-      .where("sentAt", ">", admin.firestore.Timestamp.fromDate(oneMinuteAgo))
+      .where("sentAt", ">", Timestamp.fromDate(oneMinuteAgo))
       .get();
     
     if (recentSnapshot.size >= 5) {
@@ -167,7 +171,7 @@ export const handler: Handler = async (event, context) => {
       if (uidsToPrune.length > 0) {
         Promise.all(uidsToPrune.map(uid => {
           return db.collection("users").doc(uid).update({
-            notificationTokens: admin.firestore.FieldValue.arrayRemove(...deadTokensToPrune[uid])
+            notificationTokens: FieldValue.arrayRemove(...deadTokensToPrune[uid])
           }).catch(err => console.error(`Failed to prune tokens for user ${uid}`, err));
         }));
       }
@@ -182,7 +186,7 @@ export const handler: Handler = async (event, context) => {
       body,
       sentByUid: callerUid,
       sentByName: callerData.name,
-      sentAt: admin.firestore.FieldValue.serverTimestamp(),
+      sentAt: FieldValue.serverTimestamp(),
       targetType,
       targets: targets || null,
       recipientCount,
