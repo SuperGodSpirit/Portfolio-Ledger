@@ -24,7 +24,7 @@ type AuthContextValue = {
   isLoading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, termsVersion?: string, privacyVersion?: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -107,7 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await signOut(auth);
   }, [ledgerUser]);
 
-  const register = useCallback(async (name: string, email: string, password: string) => {
+  const register = useCallback(async (name: string, email: string, password: string, termsVersion?: string, privacyVersion?: string) => {
     setError(null);
     try {
       const { createUserWithEmailAndPassword } = await import("firebase/auth");
@@ -116,14 +116,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       
+      const now = new Date().toISOString();
+
       await setDoc(doc(db, "users", cred.user.uid), {
         name,
         role: "viewer",
         status: "pending",
         portfolios: [],
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        termsAcceptedAt: now,
+        termsVersion: termsVersion || "1.0",
+        privacyVersion: privacyVersion || "1.0"
       });
+
+      // Log the terms acceptance
+      createAuditLog({
+        eventType: "terms_accepted",
+        entityType: "system",
+        entityId: cred.user.uid,
+        userUid: cred.user.uid,
+        userName: name,
+        description: `Accepted Terms v${termsVersion || "1.0"} and Privacy Policy v${privacyVersion || "1.0"}`,
+      }).catch(e => console.error("Failed to log terms acceptance", e));
 
       // We don't automatically log them into a dashboard yet since status is pending, 
       // but onAuthStateChanged will pick up the user.

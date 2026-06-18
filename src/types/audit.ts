@@ -8,7 +8,8 @@ export type AuditEventType =
   | "psr_updated"
   | "user_login"
   | "user_logout"
-  | "report_exported";
+  | "report_exported"
+  | "terms_accepted";
 
 export type AuditLog = {
   id: string;

@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import Button from "./Button";
 
 type ModalProps = {
@@ -7,9 +7,22 @@ type ModalProps = {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
+  maxWidth?: string;
 };
 
-const Modal = ({ title, isOpen, onClose, children }: ModalProps) => {
+const Modal = ({ title, isOpen, onClose, children, maxWidth = "max-w-md" }: ModalProps) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen) {
     return null;
   }
@@ -23,7 +36,7 @@ const Modal = ({ title, isOpen, onClose, children }: ModalProps) => {
       onClick={onClose}
     >
       <div 
-        className="w-full max-w-md rounded border border-ledger-line bg-ledger-panel p-6 shadow-ledger relative"
+        className={`w-full ${maxWidth} max-h-[90vh] overflow-y-auto rounded border border-ledger-line bg-ledger-panel p-6 shadow-ledger relative`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-start justify-between gap-4">

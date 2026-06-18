@@ -76,6 +76,12 @@ const AuditLogPage = ({ basePath }: AuditLogPageProps) => {
   return (
     <DashboardLayout title={titleByBasePath[basePath]} subtitle="Audit Logs">
       
+      <div className="mb-6 rounded border border-ledger-amber/20 bg-ledger-amber/5 p-4">
+        <p className="text-xs leading-relaxed text-ledger-amber/90">
+          <strong>Important:</strong> Audit records reflect user activity within the platform and do not independently verify the accuracy of underlying financial events.
+        </p>
+      </div>
+
       <div className="mb-6 grid gap-4 rounded border border-ledger-line bg-ledger-panel p-4 sm:grid-cols-2 lg:grid-cols-5">
         <select
           value={portfolioFilter}

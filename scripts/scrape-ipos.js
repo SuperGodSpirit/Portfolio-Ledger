@@ -1,20 +1,26 @@
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const cheerio = require('cheerio');
 const { initializeApp, getApps, cert } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
-const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT;
-
-if (!serviceAccountKey) {
-  console.error("FIREBASE_SERVICE_ACCOUNT is not set. Exiting.");
-  process.exit(1); 
-}
-
 let serviceAccount;
-try {
-  serviceAccount = JSON.parse(serviceAccountKey);
-} catch (e) {
-  console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT. Must be valid JSON.");
-  process.exit(1);
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+  try {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  } catch (e) {
+    console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT. Must be valid JSON.");
+    process.exit(1);
+  }
+} else if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+  serviceAccount = {
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+  };
+} else {
+  console.error("Firebase credentials are not set. Exiting.");
+  process.exit(1); 
 }
 
 if (getApps().length === 0) {
@@ -119,9 +125,22 @@ async function scrapeIPOWatch() {
           let lotSize = null;
           let minInvestment = null;
           let listingDate = null;
+          let peRatio = null;
+          let ronw = null;
+          let debtToEquity = null;
+          let issueSize = null;
+          let revenueGrowth = null;
+          let profitGrowth = null;
+          
+          let revenues = [];
+          let pats = [];
+          let eps = null;
           
           _$('table').each((idx, table) => {
-            if (_$(table).text().includes('Lot Size') && !lotSize) {
+            const text = _$(table).text().toLowerCase();
+            
+            // Lot Size
+            if (text.includes('lot size') && !lotSize) {
               _$(table).find('tr').each((j, tr) => {
                 const rowText = _$(tr).text().toLowerCase();
                 if (rowText.includes('retail') && rowText.includes('minimum')) {
@@ -133,23 +152,110 @@ async function scrapeIPOWatch() {
                 }
               });
             }
-          });
 
-          _$('table').each((idx, table) => {
-            _$(table).find('tr').each((j, tr) => {
-              const rowText = _$(tr).text().toLowerCase();
-              if (rowText.includes('listing date')) {
+            // Dates
+            if (text.includes('listing date') && !listingDate) {
+              _$(table).find('tr').each((j, tr) => {
+                const rowText = _$(tr).text().toLowerCase();
+                if (rowText.includes('listing date')) {
+                  const cols = _$(tr).find('td, th').map((k, td) => _$(td).text().trim()).get();
+                  if (cols.length >= 2) {
+                    listingDate = cols[1];
+                  }
+                }
+              });
+            }
+
+            // KPI Table (PE, RoNW, Debt, EPS)
+            if (text.includes('kpi') || text.includes('return on net worth')) {
+              _$(table).find('tr').each((j, tr) => {
+                const rowText = _$(tr).text().toLowerCase();
                 const cols = _$(tr).find('td, th').map((k, td) => _$(td).text().trim()).get();
                 if (cols.length >= 2) {
-                  listingDate = cols[1];
+                  if (rowText.includes('p/e ratio') || rowText.includes('pe ratio')) {
+                    const val = parseFloat(cols[1].replace(/[^0-9.]/g, ''));
+                    if (!isNaN(val)) peRatio = val;
+                  }
+                  if (rowText.includes('ronw') || rowText.includes('return on net worth')) {
+                    const val = parseFloat(cols[1].replace(/[^0-9.]/g, ''));
+                    if (!isNaN(val)) ronw = val;
+                  }
+                  if (rowText.includes('debt to equity')) {
+                    const val = parseFloat(cols[1].replace(/[^0-9.]/g, ''));
+                    if (!isNaN(val)) debtToEquity = val;
+                  }
+                  if (rowText.includes('earning per share') || rowText.includes('eps')) {
+                    const val = parseFloat(cols[1].replace(/[^0-9.]/g, ''));
+                    if (!isNaN(val)) eps = val;
+                  }
                 }
-              }
-            });
+              });
+            }
+
+            // Issue Size Table
+            if (text.includes('issue size')) {
+              _$(table).find('tr').each((j, tr) => {
+                const rowText = _$(tr).text().toLowerCase();
+                if (rowText.includes('issue size')) {
+                  const cols = _$(tr).find('td, th').map((k, td) => _$(td).text().trim()).get();
+                  if (cols.length >= 2) {
+                    // Extract numeric value in Crores
+                    const match = cols[1].match(/₹([\d.]+)\s*Crores/i);
+                    if (match) issueSize = parseFloat(match[1]);
+                  }
+                }
+              });
+            }
+
+            // Financials Table (Revenue, PAT)
+            if (text.includes('revenue') && text.includes('pat') && text.includes('period ended')) {
+               _$(table).find('tr').each((j, tr) => {
+                  const cols = _$(tr).find('td, th').map((k, td) => _$(td).text().trim()).get();
+                  if (cols.length >= 4 && !cols[0].toLowerCase().includes('period ended')) {
+                     const period = cols[0].trim();
+                     // Only include full years to avoid negative growth comparing 9mo to 12mo
+                     if (/^\d{4}$/.test(period)) {
+                       const rev = parseFloat(cols[1].replace(/[^0-9.]/g, ''));
+                       const pat = parseFloat(cols[3].replace(/[^0-9.]/g, ''));
+                       if (!isNaN(rev)) revenues.push(rev);
+                       if (!isNaN(pat)) pats.push(pat);
+                     }
+                  }
+               });
+            }
           });
+
+          // Fallback PE Ratio Calculation
+          if (!peRatio && eps && ipo.priceBand) {
+             const maxPriceMatch = ipo.priceBand.match(/to\s*₹?([\d.]+)/i) || ipo.priceBand.match(/₹([\d.]+)/);
+             if (maxPriceMatch) {
+                const maxPrice = parseFloat(maxPriceMatch[1]);
+                peRatio = Number((maxPrice / eps).toFixed(2));
+             }
+          }
+
+          if (revenues.length >= 2) {
+            const current = revenues[revenues.length - 1];
+            const prev = revenues[revenues.length - 2];
+            if (prev !== 0) revenueGrowth = Number((((current - prev) / prev) * 100).toFixed(2));
+          }
+          
+          if (pats.length >= 2) {
+            const current = pats[pats.length - 1];
+            const prev = pats[pats.length - 2];
+            if (prev !== 0) profitGrowth = Number((((current - prev) / Math.abs(prev)) * 100).toFixed(2));
+          }
           
           ipo.lotSize = lotSize;
           ipo.minInvestment = minInvestment;
           ipo.listingDate = listingDate;
+          ipo.peRatio = peRatio;
+          ipo.ronw = ronw;
+          ipo.debtToEquity = debtToEquity;
+          ipo.issueSize = issueSize;
+          ipo.revenueGrowth = revenueGrowth;
+          ipo.profitGrowth = profitGrowth;
+          
           // small delay to avoid rate limiting
           await new Promise(res => setTimeout(res, 500));
         } catch(e) {

@@ -119,6 +119,12 @@ const SettlementCenterPage = ({ basePath }: SettlementCenterPageProps) => {
         </Link>
       </div>
 
+      <div className="mb-6 rounded border border-ledger-amber/20 bg-ledger-amber/5 p-4">
+        <p className="text-xs leading-relaxed text-ledger-amber/90">
+          <strong>Important:</strong> Settlement information displayed by Portfolio Ledger is generated solely from user-provided records and predefined allocation ratios. Portfolio Ledger does not process payments, facilitate transfers, collect debts, enforce obligations, or act as an intermediary. Users are solely responsible for independently verifying all figures before taking action.
+        </p>
+      </div>
+
       {error && (
         <div className="mb-5 rounded border border-[#5b3232] bg-[#2a1718] px-4 py-3 text-sm text-[#ffb5b5]">
           {error}

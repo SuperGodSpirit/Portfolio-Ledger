@@ -44,7 +44,7 @@ const PrivateAccessModal = ({ isOpen, onClose }: PrivateAccessModalProps) => {
     setError(null);
 
     try {
-      await withLoader(() => register(name, email, password));
+      await withLoader(() => register(name, email, password, "1.0", "1.0"));
       // Success! They are now logged in but pending.
       onClose();
     } catch (err: any) {

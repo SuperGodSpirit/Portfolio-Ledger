@@ -50,6 +50,12 @@ export default function NotificationsPage({ basePath }: NotificationsPageProps) 
         ) : undefined
       }
     >
+      <div className="mb-6 rounded border border-ledger-amber/20 bg-ledger-amber/5 p-4">
+        <p className="text-[11px] leading-relaxed text-ledger-amber/90">
+          <strong>Important:</strong> Notifications and alerts are provided for convenience only. They do not constitute financial advice, and Portfolio Ledger accepts no liability for missed deadlines or inaccurate event data.
+        </p>
+      </div>
+
       <div className="bg-[#151a20] rounded-2xl border border-ledger-line shadow-xl overflow-hidden">
         {notifications.length === 0 ? (
           <div className="p-16 flex flex-col items-center justify-center text-ledger-text-secondary">

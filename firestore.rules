@@ -107,6 +107,14 @@ service cloud.firestore {
     }
     
     // ==========================================
+    // IPO OUTLOOKS COLLECTION
+    // ==========================================
+    match /ipoOutlooks/{outlookId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only backend scraper/AI logic
+    }
+    
+    // ==========================================
     // AUDIT LOGS COLLECTION
     // ==========================================
     match /audit_logs/{logId} {

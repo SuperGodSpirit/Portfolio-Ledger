@@ -148,6 +148,12 @@ const DashboardLayout = ({
         onStayLoggedIn={resetTimer}
         onLogoutNow={forceLogout}
       />
+
+      <footer className="mt-auto py-6 border-t border-ledger-line text-center px-4">
+        <p className="text-[10px] uppercase tracking-widest text-[#596574] leading-relaxed max-w-4xl mx-auto">
+          Information provided by Portfolio Ledger is for tracking, reporting, and analytical purposes only and does not constitute financial, legal, accounting, tax, or investment advice.
+        </p>
+      </footer>
     </main>
   );
 };

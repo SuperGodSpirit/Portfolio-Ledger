@@ -2,9 +2,9 @@
 
 ## Overview
 
-**Portfolio Ledger** is a private, invite-only web application built for a small group of investors who pool money together to apply for IPOs (Initial Public Offerings) in the Indian stock market. It serves as a centralized command center for the full IPO lifecycle: from researching market IPOs, recording applications, calculating profit/loss and member entitlements, tracking settlements between members, analyzing performance, and exporting audit-ready reports.
+**Portfolio Ledger** is a private, invite-only web application built to help families and private investor groups manage, track, and coordinate their distributed household demat accounts during Initial Public Offerings (IPOs) in the Indian stock market. The platform serves solely as a centralized record-keeping and mathematical utility for the full IPO lifecycle: from researching market IPOs, recording family allotments, calculating household profit/loss and member entitlements based on predefined ratios, tracking internal reconciliation records, analyzing performance, and exporting audit-ready reports.
 
-The app is built with **React + TypeScript + Vite**, styled with **Tailwind CSS**, and uses **Google Firebase** (Firestore + Firebase Auth) as its backend. It has a sophisticated **role-based access control (RBAC)** system and is fully dark-themed with a professional finance-tool aesthetic.
+The app is built with **React + TypeScript + Vite**, styled with **Tailwind CSS**, and uses **Google Firebase** (Firestore + Firebase Auth) as its backend. It has a sophisticated **role-based access control (RBAC)** system, robust legal compliance measures, and is fully dark-themed with a professional finance-tool aesthetic.
 
 ---
 
@@ -77,7 +77,7 @@ There are **4 user roles** with hierarchical access:
 
 ### 2. Pending Access Page (`/pending`)
 - Shown to users who have signed up but have not yet been approved by an admin
-- Two-panel layout: left panel describes the app's three core features (Research & Evaluation, Group-Based Applications, Portfolio Governance); right panel shows the pending status card
+- Two-panel layout: left panel describes the app's three core features (Research & Evaluation, Independent Application Tracking, Portfolio Governance); right panel shows the pending status card
 - Animated "Pending Approval" badge with a pulsing orange dot
 - Link to **request access via Telegram** (direct link to admin's Telegram)
 - Sign Out button
@@ -127,7 +127,7 @@ Displays **live IPO market data** fetched from an external data source (cached i
 - **Upcoming IPOs** section: IPOs not yet open
 - **Recently Closed (Last 5)** section: closed and listed IPOs
 - Clicking any IPO card opens a **detail modal** with full information
-- The modal shows an "Apply" button (only for owners/managers; viewers see read-only view)
+- The modal shows a "Record Participation" button (only for owners/managers; viewers see read-only view) to emphasize that users apply independently and Portfolio Ledger only tracks their entries.
 - Shows last-fetched timestamp (IST timezone)
 
 ### 7. IPO History Page (`/*/ipos`)
@@ -291,15 +291,30 @@ A complete data export center for generating Excel (`.xlsx`) reports:
 - Simple 404 page redirecting users back to the app
 
 ### 17. Privacy Policy (`/privacy`) & Terms & Conditions (`/terms`)
-- Static informational pages accessible without login
-- Linked from the login page footer
+- Strict, legally robust informational pages detailing the platform's non-broker/non-adviser status.
+- Linked from the login page footer.
+- Mandatory acceptance required during account creation via the Private Access Modal.
 
 ### 18. Notification Center (`/*/notifications`)
 A centralized inbox for all system alerts:
 - **Notification Bell**: Located in the top navigation header with an unread count badge. Updates instantly across all tabs using real-time Firestore listeners and an optimistic UI state.
 - **Dropdown Preview**: Clicking the bell shows the last 5 notifications with icons indicating the category (IPO Alerts, Settlement Alerts, Admin Messages).
 - **Full Inbox View**: Dedicated page displaying up to 100 recent notifications with "Mark all as read" functionality.
+- **Admin UI Controls**: Built-in placeholders and warnings instruct admins to only use informational language and avoid language that could be construed as investment advice or solicitations.
 - **Push Notifications**: Supported natively via Firebase Cloud Messaging for desktop and mobile, ensuring critical alerts reach users even when the app is closed. Backend delivery is handled securely via Netlify Functions.
+
+### 19. AI-Generated IPO Outlooks
+- The platform features a fully automated AI Outlook system powered by the Gemini API.
+- Background scripts continuously scrape live IPO fundamental data (PE Ratios, RoNW, YoY Growth) from IPOWatch and securely inject it into Gemini using a heavily prompted, deterministic schema.
+- The AI generates 4 specific listing gain scenario ranges (Bear, Base, GMP, Bull) along with dynamically calculated probabilistic chances (e.g., 55% CHANCE) and an overall confidence score.
+- The platform enforces strict validation rules (e.g., "Overconfidence Rejection") and exponential backoff retry logic to handle rate limiting.
+- A robust, highly customizable `<AiAnalysisDisclaimer />` component ensures all AI-generated content is explicitly labeled as experimental and non-advisory, and post-listing scripts score the AI's actual accuracy to keep it calibrated.
+
+### 20. Progressive Web App (PWA) & Offline Capabilities
+- **Installable Application**: The platform is fully PWA-compliant via `vite-plugin-pwa`, allowing users to install the app directly to their iOS/Android home screens or Desktop via browser prompts, providing a native app-like experience without app store deployment.
+- **Offline Mode**: A sophisticated Service Worker aggressively caches static assets, fonts, and the application shell.
+- **Firestore Offline Persistence**: Firebase Firestore offline persistence is enabled, allowing users to view cached IPO data and their portfolio ledgers even when completely disconnected from the internet.
+- **App Updates**: Background polling alerts the user when a new version of the PWA is available via an intuitive "Update Ready" toast notification.
 
 ---
 
@@ -328,9 +343,10 @@ The central data entity. Key fields:
 
 ### LedgerUser
 - `uid`, `name`, `role`, `status`, `portfolios[]` (list of portfolio IDs for viewers)
+- `termsAcceptedAt` (timestamp), `termsVersion`, `privacyVersion` (Legal compliance and agreement tracking)
 
 ### AuditLog
-- `eventType` (one of: ipo_created, ipo_edited, ipo_archived, ipo_restored, settlement_settled, settlement_pending, psr_updated, user_login, user_logout, report_exported)
+- `eventType` (one of: ipo_created, ipo_edited, ipo_archived, ipo_restored, settlement_settled, settlement_pending, psr_updated, user_login, user_logout, report_exported, terms_accepted)
 - `entityType`, `entityId`, `userUid`, `userName`, `timestamp`, `description`, `portfolioId`
 
 ### MarketIpo
@@ -421,7 +437,9 @@ The audit log is immutable (append-only) and viewable by Owners and Managers on 
 | 17 | Reports & Export | 4 report types as formatted XLSX files generated client-side |
 | 18 | Session timeout | Graceful session expiry handling via modal |
 | 19 | Responsive design | Desktop table layouts with mobile card fallbacks throughout |
-| 20 | Privacy & Terms pages | Static legal pages linked from login |
-| 21 | In-App Notifications | Real-time inbox with unread badges, mark-as-read, and targeted delivery by role/portfolio |
-| 22 | Push Notifications | OS-level push notifications via Firebase Cloud Messaging and Service Workers |
-| 23 | Database Maintenance | Admin tools to safely prune old database records (e.g. 90-day notification retention) |
+| 20 | Privacy & Terms pages | Strict legal terms with version tracking and mandatory acceptance on signup |
+| 21 | Legal & Compliance Protection | Application-wide disclaimers and explicit record-keeping positioning |
+| 22 | In-App Notifications | Real-time inbox with unread badges, mark-as-read, and targeted delivery by role/portfolio |
+| 23 | Push Notifications | OS-level push notifications via Firebase Cloud Messaging and Service Workers |
+| 24 | Database Maintenance | Admin tools to safely prune old database records (e.g. 90-day notification retention) |
+| 25 | AI Outlook Readiness | Structured disclaimer component (`AiAnalysisDisclaimer`) prepared for future AI feature integration |

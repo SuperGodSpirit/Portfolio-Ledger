@@ -448,7 +448,10 @@ const IpoForm = ({
         </div>
       ) : null}
 
-      <div className="flex justify-end">
+      <div className="flex flex-col items-end gap-3 mt-8">
+        <p className="text-[11px] text-[#8793a3] max-w-xl text-right">
+          Data entered into Portfolio Ledger is stored for record-keeping and analytical purposes only. Portfolio Ledger does not recommend, solicit, broker, or facilitate securities transactions.
+        </p>
         <Button type="submit" disabled={isSubmitting || portfolios.length === 0 || hasLotError}>
           <Save className="h-4 w-4" aria-hidden="true" />
           {isSubmitting ? "Saving" : submitLabel}

@@ -119,7 +119,10 @@ const NotificationsTab = () => {
       )}
 
       <section>
-        <h3 className="text-lg font-medium text-white mb-4">Send Manual Notification</h3>
+        <h3 className="text-lg font-medium text-white mb-1">Send Manual Notification</h3>
+        <p className="text-xs text-ledger-amber/90 mb-4 bg-ledger-amber/5 border border-ledger-amber/20 p-2 rounded">
+          <strong>Important:</strong> Use informational language and avoid investment recommendations, endorsements, or solicitation-style messaging.
+        </p>
         
         {message && (
           <div className={`p-4 mb-4 rounded-md ${message.type === "error" ? "bg-red-500/10 text-red-400 border border-red-500/20" : "bg-green-500/10 text-green-400 border border-green-500/20"}`}>
@@ -135,7 +138,7 @@ const NotificationsTab = () => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full bg-[#151a20] border border-ledger-line rounded px-3 py-2 text-white focus:outline-none focus:border-ledger-primary"
-              placeholder="e.g., Important System Update"
+              placeholder="e.g., New Market IPO Added"
               required
             />
           </div>
@@ -146,7 +149,7 @@ const NotificationsTab = () => {
               value={body}
               onChange={(e) => setBody(e.target.value)}
               className="w-full bg-[#151a20] border border-ledger-line rounded px-3 py-2 text-white h-24 focus:outline-none focus:border-ledger-primary"
-              placeholder="Enter your message here..."
+              placeholder="e.g., A new IPO has been added to the market feed for your tracking."
               required
             />
           </div>

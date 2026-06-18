@@ -21,6 +21,12 @@ const SettlementPreview = ({ snapshot, onToggleSettlement }: SettlementPreviewPr
         </p>
       </div>
 
+      <div className="rounded border border-ledger-amber/20 bg-ledger-amber/5 p-4">
+        <p className="text-xs leading-relaxed text-ledger-amber/90">
+          <strong>Important:</strong> Settlement information displayed by Portfolio Ledger is generated solely from user-provided records and predefined allocation ratios. Portfolio Ledger does not process payments, facilitate transfers, collect debts, enforce obligations, or act as an intermediary. Users are solely responsible for independently verifying all figures before taking action.
+        </p>
+      </div>
+
       <div className="grid gap-6 md:grid-cols-2">
         {/* P/L Summary */}
         <div className="rounded border border-ledger-line bg-[#101418] p-4">

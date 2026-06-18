@@ -123,6 +123,11 @@ const MarketIposPage = ({ basePath, canApply = true }: { basePath: string, canAp
         )
       }
     >
+      <div className="mb-6 rounded border border-ledger-amber/20 bg-ledger-amber/5 p-4">
+        <p className="text-xs leading-relaxed text-ledger-amber/90">
+          <strong>Important:</strong> Market information is provided for informational and research purposes only. Portfolio Ledger does not recommend, endorse, solicit, or advise participation in any IPO or security.
+        </p>
+      </div>
       <div className="space-y-8">
         <div>
           <h2 className="mb-4 text-2xl font-bold text-white border-b border-ledger-line pb-2 text-center">Active IPOs</h2>

@@ -94,14 +94,17 @@ const LoginPage = () => {
         </div>
       </form>
 
-      <div className="mt-12 pt-6 border-t border-ledger-line text-center">
-        <p className="text-xs text-[#8793a3] font-medium tracking-wide mb-3">Version {__APP_VERSION__}</p>
-        <div className="flex items-center justify-center gap-3 text-xs text-[#9aa6b5] mb-3">
-          <Link to="/privacy" className="hover:text-white transition">Privacy Policy</Link>
-          <span>•</span>
-          <Link to="/terms" className="hover:text-white transition">Terms & Conditions</Link>
+      <div className="mt-12 pt-6 border-t border-ledger-line text-center space-y-4">
+        <p className="text-[11px] leading-relaxed text-[#8793a3]">
+          By using Portfolio Ledger, you agree to the <Link to="/terms" className="text-ledger-blue hover:text-white underline-offset-2 hover:underline transition">Terms & Conditions</Link> and <Link to="/privacy" className="text-ledger-blue hover:text-white underline-offset-2 hover:underline transition">Privacy Policy</Link>.
+        </p>
+        <p className="text-[11px] leading-relaxed text-[#596574]">
+          Portfolio Ledger is an informational portfolio tracking and analytics platform and does not provide investment, legal, tax, accounting, or financial advice.
+        </p>
+        <div className="flex items-center justify-between text-[10px] text-[#4a5568] pt-2">
+          <span>Version {__APP_VERSION__}</span>
+          <span>© 2026 Portfolio Ledger</span>
         </div>
-        <p className="text-xs text-[#596574]">© 2026 Portfolio Ledger</p>
       </div>
 
       <PrivateAccessModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
