@@ -46,6 +46,11 @@ const dispatchNotification = async (payload: SendNotificationPayload) => {
     throw new Error(data.error || "Failed to send notification.");
   }
 
+  if (data.diagnostics) {
+    console.log("=== Notification Diagnostics ===");
+    console.table(data.diagnostics);
+  }
+
   return data;
 };
 

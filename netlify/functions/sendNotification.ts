@@ -108,8 +108,11 @@ export const handler: Handler = async (event, context) => {
 
       if (targetType === "broadcast") {
         shouldInclude = true;
-      } else if (targetType === "role" && Array.isArray(targets) && targets.includes(data.role)) {
-        shouldInclude = true;
+      } else if (targetType === "role" && Array.isArray(targets)) {
+        const lowerTargets = targets.map(t => typeof t === 'string' ? t.toLowerCase() : t);
+        if (lowerTargets.includes((data.role || "").toLowerCase())) {
+          shouldInclude = true;
+        }
       } else if (targetType === "portfolio" && Array.isArray(targets) && data.portfolios?.some((p: string) => targets.includes(p))) {
         shouldInclude = true;
       } else if (targetType === "users" && Array.isArray(targets) && targets.includes(doc.id)) {
@@ -202,9 +205,26 @@ export const handler: Handler = async (event, context) => {
       status
     });
 
+    const diagnostics = {
+      totalActiveUsers: usersSnapshot.size,
+      usersWithTokens: usersSnapshot.docs.filter(d => (d.data().notificationTokens || []).length > 0).length,
+      usersPassedRoleCheck: usersSnapshot.docs.filter(d => {
+         const r = (d.data().role || "").toLowerCase();
+         return Array.isArray(targets) && targets.map(t=>String(t).toLowerCase()).includes(r);
+      }).length,
+      usersSkippedByPreferences: usersSnapshot.docs.filter(d => d.data().notifications?.enabled === false || d.data().notifications?.[notificationCategory] === false).length
+    };
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, recipientCount, successCount: totalSuccess, failureCount: totalFailure, status })
+      body: JSON.stringify({ 
+        success: true, 
+        recipientCount, 
+        successCount: totalSuccess, 
+        failureCount: totalFailure, 
+        status,
+        diagnostics
+      })
     };
 
   } catch (error: any) {
