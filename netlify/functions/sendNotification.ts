@@ -1,33 +1,25 @@
 import { Handler } from "@netlify/functions";
 import * as admin from "firebase-admin";
 
-// Initialize Firebase Admin securely using discrete environment variables
-if (!admin.apps.length) {
-  try {
+let isInitialized = false;
+
+const initializeFirebase = () => {
+  if (!isInitialized && !admin.apps.length) {
     const projectId = process.env.FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    // Replace literal '\n' strings with actual newlines for the private key
     const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
     if (!projectId || !clientEmail || !privateKey) {
-      console.warn("Missing Firebase Admin environment variables. Using default application default credentials if available.");
+      console.warn("Missing Firebase Admin environment variables.");
       admin.initializeApp();
     } else {
       admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId,
-          clientEmail,
-          privateKey,
-        }),
+        credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
       });
     }
-  } catch (error) {
-    console.error("Failed to initialize Firebase Admin.", error);
+    isInitialized = true;
   }
-}
-
-const db = admin.firestore();
-const messaging = admin.messaging();
+};
 
 export const handler: Handler = async (event, context) => {
   if (event.httpMethod !== "POST") {
@@ -35,6 +27,11 @@ export const handler: Handler = async (event, context) => {
   }
 
   try {
+    // 0. Initialize Firebase inside the handler to prevent global scope crashes (502s)
+    initializeFirebase();
+    const db = admin.firestore();
+    const messaging = admin.messaging();
+
     // 1. Verify Caller Authentication
     const authHeader = event.headers.authorization || event.headers.Authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
