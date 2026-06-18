@@ -51,6 +51,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const profile = await getLedgerUser(currentUser.uid);
         setLedgerUser(profile);
+
+        // Auto-sync push notification token if permissions are already granted
+        if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+          import("../services/notificationService").then(({ requestNotificationPermission }) => {
+            requestNotificationPermission(currentUser.uid).catch(e => console.warn("Failed to background sync push token", e));
+          });
+        }
       } catch (profileError) {
         setLedgerUser(null);
         setError(
