@@ -7,7 +7,23 @@ import type { NotificationHistoryItem } from "../types/notification";
 export const useInAppNotifications = (maxLimit = 50) => {
   const { ledgerUser } = useAuth();
   const [notifications, setNotifications] = useState<NotificationHistoryItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [localLastReadStr, setLocalLastReadStr] = useState<string | null | undefined>(ledgerUser?.lastReadNotificationAt);
+
+  useEffect(() => {
+    if (!ledgerUser) return;
+    setLocalLastReadStr(ledgerUser.lastReadNotificationAt);
+
+    const unsubscribeUser = onSnapshot(doc(db, "users", ledgerUser.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.lastReadNotificationAt) {
+          setLocalLastReadStr(data.lastReadNotificationAt);
+        }
+      }
+    });
+
+    return () => unsubscribeUser();
+  }, [ledgerUser]);
 
   useEffect(() => {
     if (!ledgerUser) return;
@@ -54,23 +70,16 @@ export const useInAppNotifications = (maxLimit = 50) => {
       });
 
       setNotifications(relevantNotifs);
-
-      // Calculate unread
-      const lastReadStr = ledgerUser.lastReadNotificationAt;
-      if (!lastReadStr) {
-        setUnreadCount(relevantNotifs.length);
-      } else {
-        const lastReadTime = new Date(lastReadStr).getTime();
-        const unread = relevantNotifs.filter(n => {
-          if (!n.sentAt) return false; // Pending write
-          return n.sentAt.toDate().getTime() > lastReadTime;
-        }).length;
-        setUnreadCount(unread);
-      }
     });
 
     return () => unsubscribe();
   }, [ledgerUser, maxLimit]);
+
+  const unreadCount = (() => {
+    if (!localLastReadStr) return notifications.length;
+    const lastReadTime = new Date(localLastReadStr).getTime();
+    return notifications.filter(n => n.sentAt && n.sentAt.toDate().getTime() > lastReadTime).length;
+  })();
 
   const markAllAsRead = async () => {
     if (!ledgerUser || notifications.length === 0) return;
@@ -80,6 +89,9 @@ export const useInAppNotifications = (maxLimit = 50) => {
     if (!latestNotif) return;
 
     const latestIso = latestNotif.sentAt.toDate().toISOString();
+    
+    // Optimistic UI Update
+    setLocalLastReadStr(latestIso);
 
     try {
       await updateDoc(doc(db, "users", ledgerUser.uid), {
@@ -90,5 +102,5 @@ export const useInAppNotifications = (maxLimit = 50) => {
     }
   };
 
-  return { notifications, unreadCount, markAllAsRead };
+  return { notifications, unreadCount, markAllAsRead, localLastReadStr };
 };

@@ -18,6 +18,7 @@ export type LedgerUser = {
   portfolios: string[];
   notificationTokens?: string[];
   notifications?: NotificationPreferences;
+  lastReadNotificationAt?: string | null;
   // Legacy fields for migration fallback (optional)
   active?: boolean;
   portfolioAlpha?: boolean;

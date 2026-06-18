@@ -15,6 +15,7 @@ type UserDocumentData = {
   PortfolioBeta?: unknown;
   createdAt?: unknown;
   updatedAt?: unknown;
+  lastReadNotificationAt?: unknown;
 };
 
 export const getLedgerUser = async (uid: string): Promise<LedgerUser | null> => {
@@ -56,5 +57,6 @@ export const getLedgerUser = async (uid: string): Promise<LedgerUser | null> => 
     portfolioBeta: portfolios.includes("portfolioBeta"),
     createdAt: data.createdAt as any,
     updatedAt: data.updatedAt as any,
+    lastReadNotificationAt: typeof data.lastReadNotificationAt === "string" ? data.lastReadNotificationAt : null,
   };
 };

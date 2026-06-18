@@ -48,7 +48,14 @@ service cloud.firestore {
         && request.resource.data.role == 'viewer'
         && request.resource.data.status == 'pending'
         && request.resource.data.portfolios.size() == 0;
-      allow update, delete: if isActiveUser() && isOwnerOrManager();
+      allow update: if isActiveUser() && (
+        isOwnerOrManager() || 
+        (request.auth.uid == userId && 
+         request.resource.data.role == resource.data.role && 
+         request.resource.data.status == resource.data.status && 
+         request.resource.data.portfolios == resource.data.portfolios)
+      );
+      allow delete: if isActiveUser() && isOwnerOrManager();
     }
 
     // ==========================================
@@ -119,7 +126,7 @@ service cloud.firestore {
     // NOTIFICATIONS COLLECTION
     // ==========================================
     match /notifications/{notificationId} {
-      allow read: if isActiveUser() && isOwnerOrManager();
+      allow read: if isActiveUser();
       allow write: if false; // Only written by Netlify Function backend
     }
   }

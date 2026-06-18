@@ -9,7 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import { Database } from "lucide-react";
 
 const AdminCenter = () => {
-    const [activeTab, setActiveTab] = useState<"users" | "portfolios" | "notifications">("users");
+    const [activeTab, setActiveTab] = useState<"users" | "portfolios" | "notifications" | "database">("users");
     const { ledgerUser } = useAuth();
 
     return (

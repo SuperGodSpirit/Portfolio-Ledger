@@ -6,11 +6,13 @@ import Button from "../components/ui/Button";
 import RoleBadge from "../components/dashboard/RoleBadge";
 import { useSessionTimeout } from "../hooks/useSessionTimeout";
 import SessionTimeoutModal from "../components/ui/SessionTimeoutModal";
+import NotificationBell from "../components/dashboard/NotificationBell";
 
 type DashboardLayoutProps = {
   title: string;
   subtitle: string;
   readOnly?: boolean;
+  basePath?: string;
   headerRight?: ReactNode;
   children: ReactNode;
 };

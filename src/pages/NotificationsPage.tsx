@@ -12,7 +12,7 @@ interface NotificationsPageProps {
 export default function NotificationsPage({ basePath }: NotificationsPageProps) {
   const { ledgerUser } = useAuth();
   // Fetch up to 100 for the full page
-  const { notifications, unreadCount, markAllAsRead } = useInAppNotifications(100);
+  const { notifications, unreadCount, markAllAsRead, localLastReadStr } = useInAppNotifications(100);
 
   const getIcon = (category: NotificationCategory) => {
     switch (category) {
@@ -62,9 +62,9 @@ export default function NotificationsPage({ basePath }: NotificationsPageProps) 
         ) : (
           <div className="divide-y divide-ledger-line">
             {notifications.map((notif) => {
-              const isUnread = notif.sentAt && ledgerUser?.lastReadNotificationAt 
-                ? notif.sentAt.toDate().getTime() > new Date(ledgerUser.lastReadNotificationAt).getTime()
-                : !ledgerUser?.lastReadNotificationAt;
+              const isUnread = notif.sentAt && localLastReadStr 
+                ? notif.sentAt.toDate().getTime() > new Date(localLastReadStr).getTime()
+                : !localLastReadStr;
 
               return (
                 <div 
