@@ -16,7 +16,9 @@ The app is built with **React + TypeScript + Vite**, styled with **Tailwind CSS*
 | Build Tool | Vite |
 | Styling | Tailwind CSS |
 | Backend/DB | Firebase Firestore |
+| Backend APIs | Netlify Functions |
 | Auth | Firebase Authentication |
+| Push Notifications | Firebase Cloud Messaging (FCM) + Service Workers |
 | Charts | Recharts (PieChart) |
 | Animated Counters | react-countup |
 | Excel Export | ExcelJS + file-saver |
@@ -250,6 +252,10 @@ Accessible by Owners and Managers. Contains two tabs:
 - **Archive/Unarchive Portfolio**: toggle a portfolio's active status
 - Toggle to show archived portfolios
 
+#### Database Maintenance Tab
+- Tools to maintain database health and prevent bloat.
+- **Notification Cleanup**: Trigger a background Netlify Function to purge all historical notifications older than 90 days.
+
 ### 15. Reports & Export Page (`/*/reports`) — Owners & Managers Only
 A complete data export center for generating Excel (`.xlsx`) reports:
 
@@ -288,6 +294,13 @@ A complete data export center for generating Excel (`.xlsx`) reports:
 - Static informational pages accessible without login
 - Linked from the login page footer
 
+### 18. Notification Center (`/*/notifications`)
+A centralized inbox for all system alerts:
+- **Notification Bell**: Located in the top navigation header with an unread count badge. Updates instantly across all tabs using real-time Firestore listeners and an optimistic UI state.
+- **Dropdown Preview**: Clicking the bell shows the last 5 notifications with icons indicating the category (IPO Alerts, Settlement Alerts, Admin Messages).
+- **Full Inbox View**: Dedicated page displaying up to 100 recent notifications with "Mark all as read" functionality.
+- **Push Notifications**: Supported natively via Firebase Cloud Messaging for desktop and mobile, ensuring critical alerts reach users even when the app is closed. Backend delivery is handled securely via Netlify Functions.
+
 ---
 
 ## Core Data Models
@@ -322,6 +335,11 @@ The central data entity. Key fields:
 
 ### MarketIpo
 - Live market data: name, price band, GMP (Grey Market Premium), close date, minimum investment, status (active / upcoming / closed / listed)
+
+### NotificationHistoryItem
+- `title`, `body`, `category` (ipoAlerts, settlementAlerts, adminAlerts)
+- `sentAt` (timestamp), `targetType` (role, portfolio, users, broadcast), `targets` (array)
+- Used to render the Notification Center inbox and track delivery.
 
 ---
 
@@ -404,3 +422,6 @@ The audit log is immutable (append-only) and viewable by Owners and Managers on 
 | 18 | Session timeout | Graceful session expiry handling via modal |
 | 19 | Responsive design | Desktop table layouts with mobile card fallbacks throughout |
 | 20 | Privacy & Terms pages | Static legal pages linked from login |
+| 21 | In-App Notifications | Real-time inbox with unread badges, mark-as-read, and targeted delivery by role/portfolio |
+| 22 | Push Notifications | OS-level push notifications via Firebase Cloud Messaging and Service Workers |
+| 23 | Database Maintenance | Admin tools to safely prune old database records (e.g. 90-day notification retention) |
