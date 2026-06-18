@@ -28,7 +28,7 @@ const NotificationPromptCard: React.FC = () => {
     if (granted) {
       setIsVisible(false);
     } else {
-      alert("Please enable notification permissions in your browser to receive alerts.");
+      alert("We couldn't enable push notifications. If you're using an ad-blocker or Brave browser, its strict privacy settings often block notifications by default.\n\nYou can safely whitelist this site to receive alerts, or simply ignore this prompt if you prefer not to receive them!");
       setIsVisible(false); // Hide the card if they denied or it failed, so it's not annoying
     }
   };
