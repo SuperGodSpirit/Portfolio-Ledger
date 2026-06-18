@@ -10,7 +10,13 @@ const initializeFirebase = () => {
   if (!isInitialized && getApps().length === 0) {
     const projectId = process.env.FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    
+    // Safely parse the private key, handling quotes and literal newlines that might occur from Netlify's UI
+    let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+    if (privateKey) {
+      privateKey = privateKey.replace(/^"|"$/g, '').replace(/^'|'$/g, '');
+      privateKey = privateKey.replace(/\\n/g, '\n');
+    }
 
     if (!projectId || !clientEmail || !privateKey) {
       console.warn("Missing Firebase Admin environment variables.");
