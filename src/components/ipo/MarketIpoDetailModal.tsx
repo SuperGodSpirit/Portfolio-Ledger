@@ -196,7 +196,7 @@ const MarketIpoDetailModal = ({ ipo, isOpen, onClose, canApply, basePath }: Mark
           </div>
         )}
 
-        <IpoOutlookSection ipoId={ipo.id} />
+        <IpoOutlookSection ipo={ipo} />
       </div>
     </Modal>
   );

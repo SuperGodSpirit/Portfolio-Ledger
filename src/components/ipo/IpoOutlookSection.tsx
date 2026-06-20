@@ -2,22 +2,44 @@ import { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import type { IpoOutlook } from "../../types/ipo-outlook";
-import { Loader2, AlertTriangle, Info } from "lucide-react";
+import { Loader2, AlertTriangle, Info, RefreshCw } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { auth } from "../../config/firebase";
+
+import type { MarketIpo } from "../../types/market-ipo";
 
 type IpoOutlookSectionProps = {
-  ipoId: string;
+  ipo: MarketIpo;
 };
 
-const IpoOutlookSection = ({ ipoId }: IpoOutlookSectionProps) => {
+const IpoOutlookSection = ({ ipo }: IpoOutlookSectionProps) => {
   const [outlook, setOutlook] = useState<IpoOutlook | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const { ledgerUser } = useAuth();
+  const canRefresh = ledgerUser?.role === 'owner' || ledgerUser?.role === 'manager';
+
+  // Determine if it's a retail IPO (< 20k investment)
+  let isRetail = true;
+  if (ipo.minInvestment) {
+    const minInv = parseInt(ipo.minInvestment.replace(/[^0-9]/g, ''), 10);
+    if (!isNaN(minInv) && minInv > 20000) isRetail = false;
+  } else if (ipo.priceBand && ipo.lotSize) {
+    const match = ipo.priceBand.match(/(\d+(\.\d+)?)/g);
+    const upperPrice = match && match.length > 0 ? parseFloat(match[match.length - 1]) : 0;
+    const lotSize = parseInt(ipo.lotSize.replace(/[^0-9]/g, ''), 10);
+    if (upperPrice > 0 && !isNaN(lotSize)) {
+      if (upperPrice * lotSize > 20000) isRetail = false;
+    }
+  }
 
   useEffect(() => {
     const fetchOutlook = async () => {
       try {
         setLoading(true);
-        const docRef = doc(db, "ipoOutlooks", ipoId);
+        const docRef = doc(db, "ipoOutlooks", ipo.id);
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
@@ -34,7 +56,63 @@ const IpoOutlookSection = ({ ipoId }: IpoOutlookSectionProps) => {
     };
 
     fetchOutlook();
-  }, [ipoId]);
+  }, [ipo.id]);
+
+  const handleRefresh = async () => {
+    // If we have an existing snapshot, check if there's a meaningful change
+    if (outlook?.inputSnapshot) {
+      // Parse current GMP
+      let currentGmpVal = 0;
+      if (ipo.gmp) {
+        const match = ipo.gmp.match(/[\d.]+/);
+        if (match) currentGmpVal = parseFloat(match[0]);
+      }
+
+      // Compare with inputSnapshot
+      const snap = outlook.inputSnapshot;
+      let hasMeaningfulChange = false;
+      
+      if (currentGmpVal !== (snap.gmp || 0)) hasMeaningfulChange = true;
+      if (ipo.peRatio !== snap.peRatio && (ipo.peRatio || snap.peRatio)) hasMeaningfulChange = true;
+      if (ipo.issueSize !== snap.issueSize && (ipo.issueSize || snap.issueSize)) hasMeaningfulChange = true;
+      if (ipo.profitGrowth !== snap.profitGrowth && (ipo.profitGrowth || snap.profitGrowth)) hasMeaningfulChange = true;
+      
+      if (!hasMeaningfulChange) {
+        const confirmed = window.confirm("No meaningful changes detected since the last analysis. Continue anyway?");
+        if (!confirmed) return;
+      }
+    }
+
+    try {
+      setRefreshing(true);
+      const user = auth.currentUser;
+      if (!user) throw new Error("Not authenticated");
+      const idToken = await user.getIdToken();
+
+      const response = await fetch('/.netlify/functions/refreshIpoOutlook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ ipoId: ipo.id })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to refresh outlook');
+      }
+
+      // Optimistically update
+      if (data.data) {
+        setOutlook(data.data);
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -45,7 +123,38 @@ const IpoOutlookSection = ({ ipoId }: IpoOutlookSectionProps) => {
   }
 
   if (error || !outlook || outlook.status !== 'completed') {
-    return null; // Don't show anything if no outlook is available
+    if (!isRetail) {
+      return null; // Don't show anything for non-retail IPOs
+    }
+    
+    return (
+      <div className="mt-6 border border-ledger-line rounded bg-ledger-panel overflow-hidden">
+        <div className="bg-gradient-to-r from-ledger-primary/20 to-transparent p-4 border-b border-ledger-line flex items-center justify-between">
+          <h3 className="font-bold text-white flex items-center gap-2">
+            <Info className="h-4 w-4 text-ledger-primary" />
+            AI Outlook
+          </h3>
+          {canRefresh && (
+            <button 
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="text-xs flex items-center gap-1.5 px-2 py-1 bg-ledger-primary/10 hover:bg-ledger-primary/20 text-ledger-primary rounded transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Generating...' : 'Generate Outlook'}
+            </button>
+          )}
+        </div>
+        <div className="p-4">
+          <div className="flex items-start gap-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 p-3 rounded text-sm">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+            <p>
+              {error ? "Failed to load AI Analysis." : "AI Analysis is currently pending or unavailable for this IPO. The backend system may still be processing it."}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const isDataMissing = (
@@ -62,11 +171,23 @@ const IpoOutlookSection = ({ ipoId }: IpoOutlookSectionProps) => {
           <Info className="h-4 w-4 text-ledger-primary" />
           AI Outlook
         </h3>
-        <div className="text-right">
-          <span className="block text-xs text-ledger-muted">Outlook Confidence</span>
-          <span className={`font-bold ${outlook.confidenceScore > 70 ? 'text-ledger-green' : outlook.confidenceScore < 40 ? 'text-red-400' : 'text-yellow-400'}`}>
-            {outlook.confidenceScore} / 100
-          </span>
+        <div className="flex items-center gap-4 text-right">
+          {canRefresh && (
+            <button 
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="text-xs flex items-center gap-1.5 px-2 py-1 bg-ledger-primary/10 hover:bg-ledger-primary/20 text-ledger-primary rounded transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Generating...' : 'Refresh Outlook'}
+            </button>
+          )}
+          <div>
+            <span className="block text-xs text-ledger-muted">Outlook Confidence</span>
+            <span className={`font-bold ${outlook.confidenceScore > 70 ? 'text-ledger-green' : outlook.confidenceScore < 40 ? 'text-red-400' : 'text-yellow-400'}`}>
+              {outlook.confidenceScore} / 100
+            </span>
+          </div>
         </div>
       </div>
       
@@ -146,6 +267,7 @@ const IpoOutlookSection = ({ ipoId }: IpoOutlookSectionProps) => {
           </p>
           <p className="text-[10px] text-ledger-muted/50 text-right">
             Generated by {outlook.modelProvider} {outlook.modelVersion} | Prompt Version: {outlook.promptVersion}
+            {outlook.triggerReason && ` | Trigger: ${outlook.triggerReason === 'manual_refresh' ? 'Manual Refresh' : outlook.triggerReason}`}
           </p>
         </div>
       </div>

@@ -305,8 +305,10 @@ A centralized inbox for all system alerts:
 
 ### 19. AI-Generated IPO Outlooks
 - The platform features a fully automated AI Outlook system powered by the Gemini API.
+- **Retail Only**: AI Analysis is only generated and displayed for retail IPOs where the minimum investment (price per lot) is less than ₹20,000. It is intentionally disabled for SME and large-ticket IPOs.
 - Background scripts continuously scrape live IPO fundamental data (PE Ratios, RoNW, YoY Growth) from IPOWatch and securely inject it into Gemini using a heavily prompted, deterministic schema.
 - The AI generates 4 specific listing gain scenario ranges (Bear, Base, GMP, Bull) along with dynamically calculated probabilistic chances (e.g., 55% CHANCE) and an overall confidence score.
+- **Enhanced Dev Controls**: Owners and Managers can manually trigger a "Refresh Outlook" from the UI. This hits a secure Netlify Function with smart confirmation logic (only bypassing confirmation if underlying fundamentals changed) and strict queue protection to prevent concurrent API calls.
 - The platform enforces strict validation rules (e.g., "Overconfidence Rejection") and exponential backoff retry logic to handle rate limiting.
 - A robust, highly customizable `<AiAnalysisDisclaimer />` component ensures all AI-generated content is explicitly labeled as experimental and non-advisory, and post-listing scripts score the AI's actual accuracy to keep it calibrated.
 
@@ -442,4 +444,4 @@ The audit log is immutable (append-only) and viewable by Owners and Managers on 
 | 22 | In-App Notifications | Real-time inbox with unread badges, mark-as-read, and targeted delivery by role/portfolio |
 | 23 | Push Notifications | OS-level push notifications via Firebase Cloud Messaging and Service Workers |
 | 24 | Database Maintenance | Admin tools to safely prune old database records (e.g. 90-day notification retention) |
-| 25 | AI Outlook Readiness | Structured disclaimer component (`AiAnalysisDisclaimer`) prepared for future AI feature integration |
+| 25 | AI-Generated IPO Outlooks | Automated AI predictions using Gemini API, with manual 'Refresh Outlook' capabilities for admins |

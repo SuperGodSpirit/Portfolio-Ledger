@@ -7,6 +7,8 @@
   [![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)](#)
   [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](#)
   [![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=white)](#)
+  
+  [![Version](https://img.shields.io/badge/Version-2.1.0--EnhancedDevControls-blue?style=for-the-badge)](#)
 </div>
 
 <br />
@@ -79,15 +81,16 @@ Instead of messy spreadsheets, Portfolio Ledger provides a secure, role-based da
    GEMINI_API_KEY="your_gemini_api_key"
    ```
 
-4. **Run the development server:**
+4. **Run the development server (with Netlify Functions support):**
    ```bash
-   npm run dev
+   npx netlify dev
    ```
+   *(Alternatively, use `npm run dev` if you do not need backend function support).*
 
-5. **(Optional) Run AI Scrapers:**
+5. **(Optional) Run AI Scrapers Manually:**
    ```bash
    node scripts/scrape-ipos.js
-   node scripts/generate-outlooks.js
+   npx tsx scripts/generate-outlooks.ts
    ```
 
 ---

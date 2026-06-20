@@ -23,10 +23,14 @@ jobs:
         
     - name: Install dependencies
       working-directory: ./scripts
-      run: npm install
+      run: npm ci
       
-    - name: Run Scraper
+    - name: Run Scraper & AI Analysis
       working-directory: ./scripts
       env:
         FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-      run: node scrape-ipos.js
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        GEMINI_API_KEY_BACKUP: ${{ secrets.GEMINI_API_KEY_BACKUP }}
+      run: |
+        node scrape-ipos.js
+        npx tsx generate-outlooks.ts

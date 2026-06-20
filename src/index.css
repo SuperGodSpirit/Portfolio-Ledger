@@ -44,3 +44,43 @@ input[type=number] {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Global Scrollbar Styling for Dark Theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0d11;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a313b;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f4854;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a313b #0a0d11;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #2a313b;
+  border-radius: 4px;
+}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #2a313b transparent;
+}

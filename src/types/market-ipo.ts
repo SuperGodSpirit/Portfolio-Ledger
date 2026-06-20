@@ -12,6 +12,12 @@ export type MarketIpo = {
   gmp: string | null;
   status: MarketIpoStatus;
   sourceLink?: string;
+  peRatio?: number | null;
+  ronw?: number | null;
+  debtToEquity?: number | null;
+  issueSize?: number | null;
+  revenueGrowth?: number | null;
+  profitGrowth?: number | null;
 };
 
 export type MarketIpoFetchMetadata = {

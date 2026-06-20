@@ -13,7 +13,17 @@ export type IpoOutlook = {
   modelVersion: string;
   promptVersion?: string;
 
-  generatedAt: Timestamp;
+  generatedAt: Timestamp | { toMillis: () => number } | any;
+  gmpAtGeneration?: number;
+  generationDurationMs?: number;
+  triggerReason?: string;
+  triggeredBy?: string;
+  triggeredByRole?: string;
+  triggerStatus?: {
+    initial: boolean;
+    preOpen: boolean;
+    closeDate: boolean;
+  };
 
   status:
     | "pending"
