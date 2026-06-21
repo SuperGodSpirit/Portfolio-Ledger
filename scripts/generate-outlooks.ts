@@ -178,6 +178,7 @@ async function run() {
       }
       const generationDurationMs = Date.now() - startTime;
 
+      try {
         const now = FieldValue.serverTimestamp();
         
         if (existingOutlook && existingOutlook.status === 'completed' && existingOutlook.generatedAt) {
