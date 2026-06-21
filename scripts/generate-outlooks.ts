@@ -84,20 +84,26 @@ async function run() {
       continue;
     }
     
-    let isRetail = true;
+    let calculatedMinInv = null;
     if (ipo.minInvestment) {
       const minInv = parseInt(ipo.minInvestment.replace(/[^0-9]/g, ''), 10);
-      if (!isNaN(minInv) && minInv > 20000) isRetail = false;
+      if (!isNaN(minInv)) calculatedMinInv = minInv;
     } else if (ipo.priceBand && ipo.lotSize) {
       const match = ipo.priceBand.match(/(\d+(\.\d+)?)/g);
       const upperPrice = match && match.length > 0 ? parseFloat(match[match.length - 1]) : 0;
       const lotSize = parseInt(ipo.lotSize.replace(/[^0-9]/g, ''), 10);
       if (upperPrice > 0 && !isNaN(lotSize)) {
-         if (upperPrice * lotSize > 20000) isRetail = false;
+         calculatedMinInv = upperPrice * lotSize;
       }
     }
     
-    if (!isRetail) {
+    if (calculatedMinInv === null || calculatedMinInv <= 0) {
+      stats.skipped++;
+      console.log(`Skipping ${ipo.name} as min investment is not defined.`);
+      continue;
+    }
+
+    if (calculatedMinInv > 20000) {
       stats.skipped++;
       console.log(`Skipping ${ipo.name} as min investment > ₹20,000.`);
       continue;
